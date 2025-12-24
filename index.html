@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Flipkart PLA Audit Dashboard</title>
+  <title>Flipkart Audit Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="header">
-  <h2>Flipkart PLA Audit Dashboard</h2>
+  <h2>Flipkart Audit Dashboard</h2>
 </div>
 
 <div class="tabs">
@@ -26,6 +26,7 @@
 
   <div id="campaignKpi" class="kpis"></div>
 
+  <!-- Existing Campaign Table (NO CHANGE) -->
   <table id="campaignTable">
     <thead>
       <tr>
@@ -35,6 +36,36 @@
         <th>Units</th>
         <th>ROI</th>
         <th>Audit Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- NEW: Day-to-Day -->
+  <h4>Day-to-Day Performance</h4>
+  <table id="dailyTrendTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Ads Spend (₹)</th>
+        <th>Units Sold</th>
+        <th>Revenue (₹)</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- NEW: Weekly -->
+  <h4>Weekly Performance</h4>
+  <table id="weeklyTrendTable">
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Ads Spend (₹)</th>
+        <th>Units Sold</th>
+        <th>Revenue (₹)</th>
+        <th>ROI</th>
       </tr>
     </thead>
     <tbody></tbody>
