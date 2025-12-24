@@ -1,62 +1,48 @@
-/* ================= TAB SWITCH ================= */
-document.querySelectorAll(".tab-btn").forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-    btn.classList.add("active");
-    document.getElementById(btn.dataset.tab).classList.add("active");
-  };
-});
-
 /* ================= CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
-  let row = [], current = "", inQuotes = false;
-
+  let row = [], cur = "", q = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i], n = text[i + 1];
-    if (c === '"' && inQuotes && n === '"') { current += '"'; i++; }
-    else if (c === '"') inQuotes = !inQuotes;
-    else if (c === "," && !inQuotes) { row.push(current.trim()); current = ""; }
-    else if (c === "\n" && !inQuotes) { row.push(current.trim()); rows.push(row); row = []; current = ""; }
-    else current += c;
+    if (c === '"' && q && n === '"') { cur += '"'; i++; }
+    else if (c === '"') q = !q;
+    else if (c === "," && !q) { row.push(cur); cur = ""; }
+    else if (c === "\n" && !q) { row.push(cur); rows.push(row); row = []; cur = ""; }
+    else cur += c;
   }
-  row.push(current.trim());
-  rows.push(row);
+  row.push(cur); rows.push(row);
   return rows;
 }
 
-const roiClass = roi => roi < 3 ? "roi-red" : roi <= 5 ? "roi-orange" : "roi-green";
+const roiClass = r => r < 3 ? "roi-red" : r <= 5 ? "roi-orange" : "roi-green";
 
-/* ================= DAILY REPORT (NO LOGIC CHANGE) ================= */
+/* ================= DAILY REPORT ================= */
 function generateCampaign() {
-  const file = campaignFile.files[0];
-  if (!file) return;
+  const f = campaignFile.files[0];
+  if (!f) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const d = parseCSV(reader.result);
+  const r = new FileReader();
+  r.onload = () => {
+    const d = parseCSV(r.result);
     const h = n => d[0].indexOf(n);
+    let S=0,R=0,U=0,map={};
 
-    let spend=0, revenue=0, units=0, map={};
-
-    d.slice(1).forEach(r=>{
-      const name=r[h("Campaign Name")];
-      if(!name) return;
-      const s=+r[h("Ad Spend")]||0;
-      const rev=+r[h("Total Revenue (Rs.)")]||0;
-      const u=+r[h("Total converted units")]||0;
-
-      spend+=s; revenue+=rev; units+=u;
-      if(!map[name]) map[name]={s:0,r:0,u:0};
-      map[name].s+=s; map[name].r+=rev; map[name].u+=u;
+    d.slice(1).forEach(x=>{
+      const c=x[h("Campaign Name")];
+      if(!c) return;
+      const s=+x[h("Ad Spend")]||0;
+      const r=+x[h("Total Revenue (Rs.)")]||0;
+      const u=+x[h("Total converted units")]||0;
+      S+=s;R+=r;U+=u;
+      if(!map[c]) map[c]={s:0,r:0,u:0};
+      map[c].s+=s;map[c].r+=r;map[c].u+=u;
     });
 
     campaignKpi.innerHTML=`
-      <div class="kpi"><div>Spend</div><div>₹${spend.toFixed(0)}</div></div>
-      <div class="kpi"><div>Revenue</div><div>₹${revenue.toFixed(0)}</div></div>
-      <div class="kpi"><div>ROI</div><div>${(revenue/spend).toFixed(2)}</div></div>
-      <div class="kpi"><div>Units</div><div>${units}</div></div>
+      <div class="kpi"><div>Spend</div><div>₹${S.toFixed(0)}</div></div>
+      <div class="kpi"><div>Revenue</div><div>₹${R.toFixed(0)}</div></div>
+      <div class="kpi"><div>ROI</div><div>${(R/S).toFixed(2)}</div></div>
+      <div class="kpi"><div>Units</div><div>${U}</div></div>
     `;
 
     const tb=campaignTable.querySelector("tbody");
@@ -75,124 +61,78 @@ function generateCampaign() {
         </tr>`;
     });
   };
-  reader.readAsText(file);
+  r.readAsText(f);
 }
 
-/* ================= PLACEMENT PERFORMANCE ================= */
+/* ================= PLACEMENT REPORT ================= */
 function generatePlacement() {
-  const file = placementFile.files[0];
-  if (!file) return;
+  const f = placementFile.files[0];
+  if (!f) return;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const d = parseCSV(reader.result);
+  const r = new FileReader();
+  r.onload = () => {
+    const d = parseCSV(r.result);
     const h = n => d[0].indexOf(n);
-
     const overall={}, pivot={};
 
-    d.slice(1).forEach(r=>{
-      const camp=r[h("Campaign Name")];
-      const cid=r[h("Campaign ID")];
-      const place=r[h("Placement Type")];
-      if(!camp||!place) return;
+    d.slice(1).forEach(x=>{
+      const c=x[h("Campaign Name")], id=x[h("Campaign ID")], p=x[h("Placement Type")];
+      if(!c||!p) return;
+      const s=+x[h("Ad Spend")]||0;
+      const u=(+x[h("Direct Units Sold")]||0)+(+x[h("Indirect Units Sold")]||0);
+      const r=(+x[h("Direct Revenue")]||0)+(+x[h("Indirect Revenue")]||0);
 
-      const s=+r[h("Ad Spend")]||0;
-      const u=(+r[h("Direct Units Sold")]||0)+(+r[h("Indirect Units Sold")]||0);
-      const rev=(+r[h("Direct Revenue")]||0)+(+r[h("Indirect Revenue")]||0);
+      if(!overall[p]) overall[p]={s:0,r:0,u:0};
+      overall[p].s+=s;overall[p].r+=r;overall[p].u+=u;
 
-      if(!overall[place]) overall[place]={s:0,r:0,u:0};
-      overall[place].s+=s; overall[place].r+=rev; overall[place].u+=u;
-
-      if(!pivot[camp]) pivot[camp]={__id:cid};
-      if(!pivot[camp][place]) pivot[camp][place]={s:0,r:0,u:0};
-      pivot[camp][place].s+=s;
-      pivot[camp][place].r+=rev;
-      pivot[camp][place].u+=u;
+      if(!pivot[c]) pivot[c]={__id:id};
+      if(!pivot[c][p]) pivot[c][p]={s:0,r:0,u:0};
+      pivot[c][p].s+=s;pivot[c][p].r+=r;pivot[c][p].u+=u;
     });
 
-    /* OVERALL TABLE (UNCHANGED) */
-    const oBody=placementOverallTable.querySelector("tbody");
-    oBody.innerHTML="";
-    Object.entries(overall).forEach(([p,c])=>{
-      const roi=c.r/c.s;
-      oBody.innerHTML+=`
-        <tr class="${roiClass(roi)}">
-          <td>${p}</td>
-          <td>${c.s.toFixed(0)}</td>
-          <td>${c.r.toFixed(0)}</td>
-          <td>${c.u}</td>
-          <td>${roi.toFixed(2)}</td>
+    placementOverallTable.querySelector("tbody").innerHTML=
+      Object.entries(overall).map(([p,c])=>{
+        const roi=c.r/c.s;
+        return `<tr class="${roiClass(roi)}">
+          <td>${p}</td><td>${c.s.toFixed(0)}</td><td>${c.r.toFixed(0)}</td>
+          <td>${c.u}</td><td>${roi.toFixed(2)}</td></tr>`;
+      }).join("");
+
+    const tb=placementCampaignTable.querySelector("tbody");
+    tb.innerHTML="";
+    Object.keys(pivot).forEach((c,i)=>{
+      const g=`g${i}`;
+      const e=Object.entries(pivot[c]).filter(x=>x[0]!=="__id");
+      const sum=e.reduce((a,[,v])=>{a.s+=v.s;a.r+=v.r;a.u+=v.u;return a;},{s:0,r:0,u:0});
+      tb.innerHTML+=`
+        <tr class="campaign-group" data-group="${g}">
+          <td><span class="campaign-toggle">▶</span>${c} (${pivot[c].__id})</td>
+          <td></td><td>${sum.s.toFixed(0)}</td>
+          <td>${sum.r.toFixed(0)}</td><td>${sum.u}</td>
+          <td>${(sum.r/sum.s).toFixed(2)}</td>
         </tr>`;
-    });
-
-    /* CAMPAIGN-WISE — COLLAPSED BY DEFAULT */
-    const cBody=placementCampaignTable.querySelector("tbody");
-    cBody.innerHTML="";
-
-    Object.keys(pivot).forEach((camp,i)=>{
-      const group=`grp-${i}`;
-      const entries=Object.entries(pivot[camp]).filter(x=>x[0]!=="__id");
-
-      const sum=entries.reduce((a,[,v])=>{
-        a.s+=v.s; a.r+=v.r; a.u+=v.u; return a;
-      },{s:0,r:0,u:0});
-
-      const roi=sum.r/sum.s;
-
-      cBody.innerHTML+=`
-        <tr class="campaign-group" data-group="${group}">
-          <td><span class="campaign-toggle">▶</span>${camp} (${pivot[camp].__id})</td>
-          <td></td>
-          <td>${sum.s.toFixed(0)}</td>
-          <td>${sum.r.toFixed(0)}</td>
-          <td>${sum.u}</td>
-          <td>${roi.toFixed(2)}</td>
-        </tr>`;
-
-      const best=entries.reduce((a,b)=>(b[1].r/b[1].s)>(a[1].r/a[1].s)?b:a);
-
-      entries.forEach(([p,v])=>{
-        const r=v.r/v.s;
-        cBody.innerHTML+=`
-          <tr class="hidden-row ${roiClass(r)} ${p===best[0]?'best-placement':''}" data-parent="${group}">
-            <td></td>
-            <td>${p}${p===best[0]?' ⭐':''}</td>
-            <td>${v.s.toFixed(0)}</td>
-            <td>${v.r.toFixed(0)}</td>
-            <td>${v.u}</td>
-            <td>${r.toFixed(2)}</td>
+      const best=e.reduce((a,b)=>(b[1].r/b[1].s)>(a[1].r/a[1].s)?b:a);
+      e.forEach(([p,v])=>{
+        const roi=v.r/v.s;
+        tb.innerHTML+=`
+          <tr class="hidden-row ${roiClass(roi)} ${p===best[0]?'best-placement':''}" data-parent="${g}">
+            <td></td><td>${p}${p===best[0]?' ⭐':''}</td>
+            <td>${v.s.toFixed(0)}</td><td>${v.r.toFixed(0)}</td>
+            <td>${v.u}</td><td>${roi.toFixed(2)}</td>
           </tr>`;
       });
     });
 
-    /* TOGGLE */
-    document.querySelectorAll(".campaign-group").forEach(row=>{
-      row.onclick=()=>{
-        const g=row.dataset.group;
-        const rows=document.querySelectorAll(`[data-parent="${g}"]`);
-        const icon=row.querySelector(".campaign-toggle");
-        const collapsed=rows[0].classList.contains("hidden-row");
-        rows.forEach(r=>r.classList.toggle("hidden-row",!collapsed));
-        icon.textContent=collapsed?"▼":"▶";
+    document.querySelectorAll(".campaign-group").forEach(r=>{
+      r.onclick=()=>{
+        const g=r.dataset.group;
+        const rows=[...document.querySelectorAll(`[data-parent="${g}"]`)];
+        const icon=r.querySelector(".campaign-toggle");
+        const open=rows[0].style.display!=="none";
+        rows.forEach(x=>x.style.display=open?"none":"table-row");
+        icon.textContent=open?"▶":"▼";
       };
     });
   };
-  reader.readAsText(file);
-}
-
-/* EXPAND / COLLAPSE ALL */
-function expandAllCampaigns(){
-  document.querySelectorAll(".campaign-group").forEach(r=>{
-    const g=r.dataset.group;
-    document.querySelectorAll(`[data-parent="${g}"]`).forEach(x=>x.classList.remove("hidden-row"));
-    r.querySelector(".campaign-toggle").textContent="▼";
-  });
-}
-
-function collapseAllCampaigns(){
-  document.querySelectorAll(".campaign-group").forEach(r=>{
-    const g=r.dataset.group;
-    document.querySelectorAll(`[data-parent="${g}"]`).forEach(x=>x.classList.add("hidden-row"));
-    r.querySelector(".campaign-toggle").textContent="▶";
-  });
+  r.readAsText(f);
 }
