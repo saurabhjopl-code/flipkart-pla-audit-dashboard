@@ -38,34 +38,31 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= CAMPAIGN ================= */
+/* ================= CAMPAIGN PERFORMANCE ================= */
 function generateCampaign() {
   const file = document.getElementById("campaignFile").files[0];
   const errorBox = document.getElementById("campaignError");
   errorBox.innerText = "";
-
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = () => {
     const data = parseCSV(reader.result);
-    const headers = data[0];
-
-    const h = name => headers.indexOf(name);
+    const h = name => data[0].indexOf(name);
 
     if (
       h("Campaign Name") === -1 ||
       h("Ad Spend") === -1 ||
       h("Total Revenue (Rs.)") === -1 ||
-      h("Total Converted Units") === -1
+      h("Total converted units") === -1
     ) {
       errorBox.innerText = "Invalid Campaign Performance CSV format.";
       return;
     }
 
     const rows = data.slice(1);
-    const map = {};
     let spend = 0, revenue = 0, units = 0;
+    const map = {};
 
     rows.forEach(r => {
       const name = r[h("Campaign Name")];
@@ -73,7 +70,7 @@ function generateCampaign() {
 
       const s = +r[h("Ad Spend")] || 0;
       const rev = +r[h("Total Revenue (Rs.)")] || 0;
-      const u = +r[h("Total Converted Units")] || 0;
+      const u = +r[h("Total converted units")] || 0;
 
       spend += s; revenue += rev; units += u;
 
@@ -98,8 +95,9 @@ function generateCampaign() {
       .forEach(([name, c]) => {
         const roi = c.spend ? c.revenue / c.spend : Infinity;
         const flag =
-          roi < 3 ? "🔴 Loss" :
-          roi <= 5 ? "🟠 Optimize" : "🟢 Scale";
+          roi < 3 ? "🔴 Loss / Critical" :
+          roi <= 5 ? "🟠 Needs Optimization" :
+          "🟢 Scale Candidate";
 
         tbody.innerHTML += `
           <tr>
@@ -113,29 +111,30 @@ function generateCampaign() {
         `;
       });
   };
+
   reader.readAsText(file);
 }
 
-/* ================= PLACEMENT ================= */
+/* ================= PLACEMENT PERFORMANCE ================= */
 function generatePlacement() {
   const file = document.getElementById("placementFile").files[0];
   const errorBox = document.getElementById("placementError");
   errorBox.innerText = "";
-
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = () => {
     const data = parseCSV(reader.result);
-    const headers = data[0];
-    const h = name => headers.indexOf(name);
+    const h = name => data[0].indexOf(name);
 
     if (
       h("Campaign Name") === -1 ||
-      h("Placement") === -1 ||
+      h("Placement Type") === -1 ||
       h("Ad Spend") === -1 ||
-      h("Total Revenue (Rs.)") === -1 ||
-      h("Total Converted Units") === -1
+      h("Direct Units Sold") === -1 ||
+      h("Indirect Units Sold") === -1 ||
+      h("Direct Revenue") === -1 ||
+      h("Indirect Revenue") === -1
     ) {
       errorBox.innerText = "Invalid Placement Performance CSV format.";
       return;
@@ -145,17 +144,23 @@ function generatePlacement() {
     tbody.innerHTML = "";
 
     data.slice(1).forEach(r => {
-      if (!r[h("Placement")]) return;
+      if (!r[h("Placement Type")]) return;
 
       const spend = +r[h("Ad Spend")] || 0;
-      const revenue = +r[h("Total Revenue (Rs.)")] || 0;
-      const units = +r[h("Total Converted Units")] || 0;
+      const units =
+        (+r[h("Direct Units Sold")] || 0) +
+        (+r[h("Indirect Units Sold")] || 0);
+
+      const revenue =
+        (+r[h("Direct Revenue")] || 0) +
+        (+r[h("Indirect Revenue")] || 0);
+
       const roi = spend ? (revenue / spend).toFixed(2) : "∞";
 
       tbody.innerHTML += `
         <tr>
           <td>${r[h("Campaign Name")]}</td>
-          <td>${r[h("Placement")]}</td>
+          <td>${r[h("Placement Type")]}</td>
           <td>${spend.toFixed(0)}</td>
           <td>${revenue.toFixed(0)}</td>
           <td>${units}</td>
@@ -164,5 +169,6 @@ function generatePlacement() {
       `;
     });
   };
+
   reader.readAsText(file);
 }
