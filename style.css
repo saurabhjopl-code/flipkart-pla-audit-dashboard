@@ -85,13 +85,6 @@ tbody tr:nth-child(even) { background: #fafafa; }
 
 tr.hidden-row { display: none !important; }
 
-.footer {
-  margin-top: 40px;
-  text-align: center;
-  font-size: 13px;
-  color: #777;
-}
-/* Collapsible sections */
 .collapsible {
   cursor: pointer;
   user-select: none;
@@ -106,4 +99,11 @@ tr.hidden-row { display: none !important; }
 
 .collapsible-body {
   margin-bottom: 22px;
+}
+
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  font-size: 13px;
+  color: #777;
 }
