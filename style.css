@@ -4,23 +4,26 @@ body {
   padding: 20px;
 }
 
+/* HEADER */
 .header {
-  background: #fff;
-  padding: 15px;
-  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 10px;
 }
 
+/* TABS */
 .tabs {
   margin: 20px 0;
 }
 
 .tab-btn {
-  padding: 10px 16px;
+  padding: 10px 18px;
   border: none;
-  background: #ddd;
-  margin-right: 5px;
+  background: #e0e0e0;
+  margin-right: 6px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 .tab-btn.active {
@@ -28,6 +31,7 @@ body {
   color: white;
 }
 
+/* CONTENT */
 .tab-content {
   display: none;
 }
@@ -36,54 +40,119 @@ body {
   display: block;
 }
 
+/* KPI */
 .kpis {
   display: flex;
   gap: 15px;
-  margin: 15px 0;
+  margin: 18px 0;
 }
 
 .kpi {
-  background: white;
-  padding: 10px;
-  border-radius: 6px;
-  min-width: 120px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+  border-radius: 10px;
+  padding: 14px;
+  min-width: 130px;
   text-align: center;
   font-weight: bold;
 }
 
+/* TABLE CARD LOOK */
 table {
   width: 100%;
-  background: white;
-  border-collapse: collapse;
-  margin-top: 12px;
+  background: #ffffff;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 16px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
+/* HEADERS */
 th {
-  background: #f1f3f5;
-  text-align: left;
-  font-weight: 600;
+  background: #f8f9fb;
+  color: #333;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 12px 14px;
+  border-bottom: 2px solid #e5e7eb;
+  position: sticky;
+  top: 0;
 }
 
-th, td {
-  padding: 10px 12px;
-  border-bottom: 1px solid #e6e6e6;
+/* CELLS */
+td {
+  padding: 11px 14px;
   font-size: 14px;
+  border-bottom: 1px solid #edf0f2;
+  color: #222;
 }
 
-td:nth-child(n+2) {
+/* ZEBRA */
+tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+/* HOVER */
+tbody tr:hover {
+  background: #f1f7ff;
+}
+
+/* NUMBER ALIGN */
+td:nth-child(n+3) {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-td:last-child {
-  text-align: center;
-  font-weight: 600;
+/* ROI FLAGS */
+.roi-green {
+  background: #e7f8ef !important;
+  color: #0f7a3d;
+  font-weight: 700;
 }
 
+.roi-orange {
+  background: #fff3cd !important;
+  color: #b36b00;
+  font-weight: 700;
+}
+
+.roi-red {
+  background: #ffe6e6 !important;
+  color: #b30000;
+  font-weight: 700;
+}
+
+/* BEST PLACEMENT */
+.best-placement {
+  background: linear-gradient(
+    90deg,
+    rgba(40,167,69,0.15),
+    transparent
+  ) !important;
+  border-left: 4px solid #28a745;
+}
+
+/* CAMPAIGN GROUP */
+.campaign-group {
+  background: #eef2f7 !important;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.campaign-group td {
+  border-bottom: 2px solid #dbe1e8;
+}
+
+/* ERROR */
 .error {
   color: red;
   margin-top: 10px;
 }
 
+/* FOOTER */
 .footer {
   margin-top: 40px;
   text-align: center;
