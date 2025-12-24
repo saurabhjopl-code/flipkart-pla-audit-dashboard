@@ -9,7 +9,7 @@ document.getElementById("csvFile").addEventListener("change", e => {
   reader.readAsText(file);
 });
 
-/* ================= ROBUST CSV PARSER ================= */
+/* ================= CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -43,51 +43,60 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= MAIN PROCESS ================= */
+/* ================= MAIN ================= */
 function processCSV(csvText) {
   const data = parseCSV(csvText);
+  const headers = data[0].map(h => h.trim());
   const rows = data.slice(1);
 
-  let totalSpend = 0,
-      totalRevenue = 0,
-      totalUnits = 0,
-      totalViews = 0,
-      totalClicks = 0;
+  // 🔑 HEADER INDEX MAPPING (THIS IS THE FIX)
+  const idx = name => headers.indexOf(name);
+
+  const CAMPAIGN = idx("Campaign Name");
+  const DATE     = idx("Date");
+  const SPEND    = idx("Ad Spend");
+  const VIEWS    = idx("Views");
+  const CLICKS   = idx("Clicks");
+  const UNITS    = idx("Total Converted Units");
+  const REVENUE  = idx("Total Revenue (Rs.)");
+
+  if ([CAMPAIGN, DATE, SPEND, VIEWS, CLICKS, UNITS, REVENUE].includes(-1)) {
+    alert("CSV headers do not match required format.");
+    return;
+  }
+
+  let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
+  let totalViews = 0, totalClicks = 0;
 
   const daily = {};
   const campaigns = {};
 
-  rows.forEach(c => {
-    const campaign = c[1];
-    const date = c[2];
-    const spend = parseFloat(c[3]) || 0;
-    const views = parseInt(c[4]) || 0;
-    const clicks = parseInt(c[5]) || 0;
-    const units = parseInt(c[6]) || 0;
-    const revenue = parseFloat(c[7]) || 0;
+  rows.forEach(r => {
+    const campaign = r[CAMPAIGN];
+    const date = r[DATE];
+    const spend = parseFloat(r[SPEND]) || 0;
+    const views = parseInt(r[VIEWS]) || 0;
+    const clicks = parseInt(r[CLICKS]) || 0;
+    const units = parseInt(r[UNITS]) || 0;
+    const revenue = parseFloat(r[REVENUE]) || 0;
 
-    // 🔑 IMPORTANT FIX: DO NOT SKIP ZERO-SPEND ROWS
     if (!campaign) return;
 
-    /* ===== TOTALS ===== */
+    /* totals */
     totalSpend += spend;
     totalRevenue += revenue;
     totalUnits += units;
     totalViews += views;
     totalClicks += clicks;
 
-    /* ===== DAILY TREND ===== */
+    /* daily */
     if (!daily[date]) daily[date] = { spend: 0, revenue: 0 };
     daily[date].spend += spend;
     daily[date].revenue += revenue;
 
-    /* ===== CAMPAIGN CONSOLIDATION ===== */
+    /* campaign consolidation */
     if (!campaigns[campaign]) {
-      campaigns[campaign] = {
-        spend: 0,
-        revenue: 0,
-        units: 0
-      };
+      campaigns[campaign] = { spend: 0, revenue: 0, units: 0 };
     }
 
     campaigns[campaign].spend += spend;
@@ -101,7 +110,7 @@ function processCSV(csvText) {
   renderTrend(daily);
 }
 
-/* ================= KPI CARDS ================= */
+/* ================= KPI ================= */
 function renderKPIs(spend, revenue, units, clicks) {
   const roi = spend > 0 ? revenue / spend : 0;
   const cls = roi < 3 ? "red" : roi <= 5 ? "orange" : "green";
@@ -128,7 +137,7 @@ function renderFunnel(views, clicks, units) {
     clicks ? ((units / clicks) * 100).toFixed(2) + "%" : "0%";
 }
 
-/* ================= CAMPAIGN TABLE (NO DUPLICATES) ================= */
+/* ================= TABLE ================= */
 function renderCampaignTable(campaigns) {
   const tbody = document.querySelector("#campaignTable tbody");
   tbody.innerHTML = "";
@@ -137,17 +146,10 @@ function renderCampaignTable(campaigns) {
     const c = campaigns[name];
     const roi = c.spend > 0 ? c.revenue / c.spend : Infinity;
 
-    let flag, cls;
-    if (roi < 3) {
-      flag = "🔴 Loss / Critical";
-      cls = "red";
-    } else if (roi <= 5) {
-      flag = "🟠 Needs Optimization";
-      cls = "orange";
-    } else {
-      flag = "🟢 Scale Candidate";
-      cls = "green";
-    }
+    let cls, flag;
+    if (roi < 3) { cls = "red"; flag = "🔴 Loss / Critical"; }
+    else if (roi <= 5) { cls = "orange"; flag = "🟠 Needs Optimization"; }
+    else { cls = "green"; flag = "🟢 Scale Candidate"; }
 
     tbody.innerHTML += `
       <tr class="${cls}">
@@ -162,14 +164,12 @@ function renderCampaignTable(campaigns) {
   });
 }
 
-/* ================= DAILY TREND ================= */
+/* ================= TREND ================= */
 function renderTrend(data) {
   const labels = Object.keys(data).sort();
   const spend = labels.map(d => data[d].spend);
   const revenue = labels.map(d => data[d].revenue);
-  const roi = labels.map((d, i) =>
-    spend[i] > 0 ? revenue[i] / spend[i] : 0
-  );
+  const roi = labels.map((d, i) => spend[i] ? revenue[i] / spend[i] : 0);
 
   if (trendChart) trendChart.destroy();
 
@@ -185,10 +185,7 @@ function renderTrend(data) {
     },
     options: {
       scales: {
-        y1: {
-          position: "right",
-          grid: { drawOnChartArea: false }
-        }
+        y1: { position: "right", grid: { drawOnChartArea: false } }
       }
     }
   });
