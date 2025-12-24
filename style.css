@@ -35,12 +35,8 @@ body {
 }
 
 /* ================= CONTENT ================= */
-.tab-content {
-  display: none;
-}
-.tab-content.active {
-  display: block;
-}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
 /* ===================================================== */
 /* ================= DAILY REPORT KPI ================== */
@@ -59,26 +55,6 @@ body {
   padding: 18px 16px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
   text-align: center;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.kpi:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-}
-
-.kpi div:first-child {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #6b7280;
-  margin-bottom: 6px;
-}
-
-.kpi div:last-child {
-  font-size: 22px;
-  font-weight: 800;
-  color: #111827;
 }
 
 /* ================= TABLE BASE ================= */
@@ -107,7 +83,11 @@ th {
   position: sticky;
   top: 0;
   z-index: 2;
+  text-align: right;
 }
+
+th:first-child { text-align: left; }
+th:last-child { text-align: center; }
 
 /* ================= TABLE CELLS ================= */
 td {
@@ -117,19 +97,14 @@ td {
 }
 
 /* ================= ZEBRA & HOVER ================= */
-tbody tr:nth-child(even) {
-  background: #fafafa;
-}
-
-tbody tr:hover {
-  background: #f1f5ff;
-}
+tbody tr:nth-child(even) { background: #fafafa; }
+tbody tr:hover { background: #f1f5ff; }
 
 /* ===================================================== */
 /* ================= DAILY REPORT TABLE ================= */
 /* ===================================================== */
 
-/* Campaign Name column */
+/* Campaign Name */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
   width: 32%;
@@ -161,30 +136,22 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
-/* Audit Status alignment */
+/* Audit Status alignment FIX */
 #campaign table td:last-child {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   font-weight: 700;
 }
 
-/* ROI emphasis */
-#campaign table td:nth-child(5) {
-  font-weight: 800;
-}
-
-/* ===================================================== */
-/* ========== STICKY CAMPAIGN NAME COLUMN =============== */
-/* ===================================================== */
-
+/* Sticky Campaign Name */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
   position: sticky;
   left: 0;
-  z-index: 3;
   background: #ffffff;
+  z-index: 3;
 }
 
 #campaign table th:nth-child(1) {
@@ -192,19 +159,10 @@ tbody tr:hover {
   z-index: 4;
 }
 
-/* Divider shadow */
-#campaign table th:nth-child(1)::after,
-#campaign table td:nth-child(1)::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: -1px;
-  width: 1px;
-  height: 100%;
-  background: #e5e7eb;
-}
+/* ===================================================== */
+/* ================= ROI BADGES ========================= */
+/* ===================================================== */
 
-/* ================= ROI BADGES ================= */
 .roi-green {
   background: #e7f8ef !important;
   color: #0f7a3d;
@@ -230,25 +188,52 @@ tbody tr:hover {
 }
 
 /* ===================================================== */
-/* ================= PLACEMENT TABLE ==================== */
+/* ========== PLACEMENT – OVERALL TABLE FIX ============= */
 /* ===================================================== */
 
+#placementOverallTable th:nth-child(1),
+#placementOverallTable td:nth-child(1) {
+  width: 38%;
+  text-align: left;
+}
+
+#placementOverallTable th:nth-child(2),
+#placementOverallTable td:nth-child(2),
+#placementOverallTable th:nth-child(3),
+#placementOverallTable td:nth-child(3),
+#placementOverallTable th:nth-child(4),
+#placementOverallTable td:nth-child(4),
+#placementOverallTable th:nth-child(5),
+#placementOverallTable td:nth-child(5) {
+  width: 15%;
+  text-align: right;
+}
+
+/* ===================================================== */
+/* ===== PLACEMENT – CAMPAIGN-WISE TABLE FIX ============= */
+/* ===================================================== */
+
+/* Campaign summary row */
 .campaign-group {
   background: linear-gradient(90deg, #eef3fa, #f8fafc) !important;
   font-weight: 800;
   cursor: pointer;
-  border-top: 2px solid #dbe3f0;
-  border-bottom: 2px solid #dbe3f0;
 }
 
-.campaign-toggle {
-  margin-right: 8px;
+.campaign-group td {
+  text-align: right;
 }
 
-.hidden-row {
-  display: none;
+.campaign-group td:first-child {
+  text-align: left;
 }
 
+/* Expanded placement rows */
+.hidden-row td:nth-child(2) {
+  padding-left: 28px;
+}
+
+/* Best placement */
 .best-placement {
   background: linear-gradient(
     90deg,
@@ -258,7 +243,10 @@ tbody tr:hover {
   border-left: 4px solid #22c55e;
 }
 
-/* ================= ACTION BUTTONS ================= */
+/* ===================================================== */
+/* ================= ACTION BUTTONS ===================== */
+/* ===================================================== */
+
 .placement-actions {
   margin: 14px 0;
 }
