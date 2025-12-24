@@ -28,14 +28,24 @@ function parseCSV(text) {
 
 /* ================= HEADER & PERIOD ================= */
 function extractReportPeriod(rows) {
-  let start = "", end = "";
-  rows.slice(0, 5).forEach(r => {
-    const t = r.join(" ").toLowerCase();
-    if (t.includes("start time")) start = r.join(" ").split(":").slice(1).join(":").trim();
-    if (t.includes("end time")) end = r.join(" ").split(":").slice(1).join(":").trim();
+  let start = "";
+  let end = "";
+
+  rows.slice(0, 5).forEach(row => {
+    const line = row.join(" ").trim();
+
+    if (/start\s*time/i.test(line)) {
+      start = line.replace(/.*start\s*time\s*:/i, "").trim();
+    }
+
+    if (/end\s*time/i.test(line)) {
+      end = line.replace(/.*end\s*time\s*:/i, "").trim();
+    }
   });
+
   return { start, end };
 }
+
 
 function autoDetectHeader(rows, required) {
   for (let i = 0; i < Math.min(10, rows.length); i++) {
