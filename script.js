@@ -20,7 +20,7 @@ function handleFiles(e) {
   });
 }
 
-/* ================= CSV PARSER (ROBUST) ================= */
+/* ================= ROBUST CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -62,23 +62,20 @@ function normalize(h) {
     .replace(/[^a-z0-9]/g, "");
 }
 
-/* ================= ROUTER ================= */
+/* ================= FILE ROUTER ================= */
 function routeFile(csvText) {
   const data = parseCSV(csvText);
   const rawHeaders = data[0];
   const headers = rawHeaders.map(h => normalize(h));
 
-  // CAMPAIGN FILE IDENTIFICATION
   const isCampaign =
     headers.includes("campaignname") &&
     headers.includes("adspend") &&
     headers.includes("totalrevenuers");
 
-  // PLACEMENT FILE IDENTIFICATION
   const isPlacement =
     headers.includes("placement") &&
-    headers.includes("spend") &&
-    headers.includes("revenue");
+    headers.includes("campaignname");
 
   if (isCampaign) {
     processCampaign(data, headers);
@@ -124,6 +121,7 @@ function processCampaign(data, headers) {
     campaigns[name].units += units;
   });
 
+  // KPI
   document.getElementById("campaignKpi").innerHTML = `
     <div class="kpi">Spend<br>₹${totalSpend.toFixed(0)}</div>
     <div class="kpi">Revenue<br>₹${totalRevenue.toFixed(0)}</div>
@@ -131,21 +129,28 @@ function processCampaign(data, headers) {
     <div class="kpi">Units<br>${totalUnits}</div>
   `;
 
+  // TABLE + FLAGS
   const tbody = document.querySelector("#campaignTable tbody");
   tbody.innerHTML = "";
 
   Object.entries(campaigns)
     .sort((a, b) => b[1].spend - a[1].spend)
     .forEach(([name, c]) => {
-      const roi = c.spend ? (c.revenue / c.spend).toFixed(2) : "∞";
+      const roi = c.spend ? c.revenue / c.spend : Infinity;
+
+      let flag;
+      if (roi < 3) flag = "🔴 Loss / Critical";
+      else if (roi <= 5) flag = "🟠 Needs Optimization";
+      else flag = "🟢 Scale Candidate";
+
       tbody.innerHTML += `
         <tr>
           <td>${name}</td>
           <td>${c.spend.toFixed(0)}</td>
           <td>${c.revenue.toFixed(0)}</td>
           <td>${c.units}</td>
-          <td>${roi}</td>
-          <td></td>
+          <td>${roi === Infinity ? "∞" : roi.toFixed(2)}</td>
+          <td>${flag}</td>
         </tr>
       `;
     });
@@ -158,9 +163,9 @@ function processPlacement(data, headers) {
   const IDX = {
     CAMPAIGN: headers.indexOf("campaignname"),
     PLACEMENT: headers.indexOf("placement"),
-    SPEND: headers.indexOf("spend"),
-    UNITS: headers.indexOf("units"),
-    REVENUE: headers.indexOf("revenue")
+    SPEND: headers.indexOf("adspend"),
+    UNITS: headers.indexOf("totalconvertedunits"),
+    REVENUE: headers.indexOf("totalrevenuers")
   };
 
   const tbody = document.querySelector("#placementTable tbody");
