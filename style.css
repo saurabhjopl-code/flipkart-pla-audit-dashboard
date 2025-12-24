@@ -1,17 +1,19 @@
+/* ================= BASE ================= */
 body {
   font-family: Arial, sans-serif;
   background: #f4f6f8;
   padding: 20px;
+  color: #222;
 }
 
-/* HEADER */
+/* ================= HEADER ================= */
 .header {
   background: #ffffff;
   padding: 16px;
   border-radius: 10px;
 }
 
-/* TABS */
+/* ================= TABS ================= */
 .tabs {
   margin: 20px 0;
 }
@@ -31,11 +33,15 @@ body {
   color: white;
 }
 
-/* CONTENT */
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+/* ================= CONTENT ================= */
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
 
-/* KPI */
+/* ================= KPI ================= */
 .kpis {
   display: flex;
   gap: 15px;
@@ -52,7 +58,7 @@ body {
   font-weight: bold;
 }
 
-/* TABLE */
+/* ================= TABLE BASE ================= */
 table {
   width: 100%;
   background: #ffffff;
@@ -65,6 +71,7 @@ table {
   font-size: 13px;
 }
 
+/* ================= TABLE HEADER ================= */
 th {
   background: #f8f9fb;
   font-weight: 700;
@@ -73,24 +80,26 @@ th {
   border-bottom: 2px solid #e5e7eb;
   position: sticky;
   top: 0;
+  z-index: 1;
 }
 
+/* ================= TABLE CELLS ================= */
 td {
   padding: 8px 10px;
   border-bottom: 1px solid #edf0f2;
+  vertical-align: middle;
 }
 
-/* ZEBRA */
-tbody tr:nth-child(even) { background: #fafafa; }
-tbody tr:hover { background: #f1f7ff; }
-
-/* NUMBER ALIGN */
-td:nth-child(n+3) {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+/* ================= ZEBRA & HOVER ================= */
+tbody tr:nth-child(even) {
+  background: #fafafa;
 }
 
-/* ROI BADGES */
+tbody tr:hover {
+  background: #f1f7ff;
+}
+
+/* ================= ROI BADGES ================= */
 td.roi-green,
 td.roi-orange,
 td.roi-red {
@@ -102,29 +111,107 @@ td.roi-red {
   font-weight: 700;
 }
 
-.roi-green { background:#e6f7ee!important; color:#0f7a3d; }
-.roi-orange { background:#fff4d6!important; color:#b36b00; }
-.roi-red { background:#ffe5e5!important; color:#b30000; }
+.roi-green {
+  background: #e6f7ee !important;
+  color: #0f7a3d;
+}
 
-/* CAMPAIGN GROUP */
+.roi-orange {
+  background: #fff4d6 !important;
+  color: #b36b00;
+}
+
+.roi-red {
+  background: #ffe5e5 !important;
+  color: #b30000;
+}
+
+/* ================= DAILY REPORT TABLE FIX ================= */
+#campaign table th:nth-child(1),
+#campaign table td:nth-child(1) {
+  width: 36%;
+  text-align: left;
+}
+
+#campaign table th:nth-child(2),
+#campaign table td:nth-child(2),
+#campaign table th:nth-child(3),
+#campaign table td:nth-child(3),
+#campaign table th:nth-child(4),
+#campaign table td:nth-child(4),
+#campaign table th:nth-child(5),
+#campaign table td:nth-child(5) {
+  width: 12%;
+  text-align: right;
+}
+
+#campaign table th:nth-child(6),
+#campaign table td:nth-child(6) {
+  width: 16%;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Header alignment consistency */
+#campaign table th {
+  text-align: right;
+}
+
+#campaign table th:first-child {
+  text-align: left;
+}
+
+#campaign table th:last-child {
+  text-align: center;
+}
+
+/* Audit status alignment */
+#campaign table td:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* ROI emphasis */
+#campaign table td:nth-child(5) {
+  font-weight: 700;
+}
+
+/* ================= PLACEMENT TABLE ================= */
+td:nth-child(n+3) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================= CAMPAIGN GROUP ================= */
 .campaign-group {
-  background: linear-gradient(90deg,#e8edf5,#f6f8fc)!important;
+  background: linear-gradient(90deg, #e8edf5, #f6f8fc) !important;
   font-weight: 700;
   cursor: pointer;
   border-top: 2px solid #d0d7e2;
   border-bottom: 2px solid #d0d7e2;
 }
 
-.campaign-toggle { margin-right: 8px; }
-.hidden-row { display: none; }
+.campaign-toggle {
+  margin-right: 8px;
+}
 
-/* BEST PLACEMENT */
+.hidden-row {
+  display: none;
+}
+
+/* ================= BEST PLACEMENT ================= */
 .best-placement {
-  background: linear-gradient(90deg,rgba(40,167,69,0.15),transparent)!important;
+  background: linear-gradient(
+    90deg,
+    rgba(40,167,69,0.15),
+    transparent
+  ) !important;
   border-left: 4px solid #28a745;
 }
 
-/* ACTION BUTTONS */
+/* ================= ACTION BUTTONS ================= */
 .placement-actions {
   margin: 12px 0;
 }
@@ -144,18 +231,24 @@ td.roi-red {
   background: #dbe4f3;
 }
 
-/* MOBILE */
+/* ================= MOBILE ================= */
 @media (max-width: 768px) {
   table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
   }
-  .kpis { flex-wrap: wrap; }
-  .kpi { flex: 1 1 45%; }
+
+  .kpis {
+    flex-wrap: wrap;
+  }
+
+  .kpi {
+    flex: 1 1 45%;
+  }
 }
 
-/* FOOTER */
+/* ================= FOOTER ================= */
 .footer {
   margin-top: 40px;
   text-align: center;
@@ -163,4 +256,8 @@ td.roi-red {
   color: #555;
 }
 
-.error { color: red; margin-top: 10px; }
+/* ================= ERROR ================= */
+.error {
+  color: red;
+  margin-top: 10px;
+}
