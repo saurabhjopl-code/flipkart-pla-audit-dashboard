@@ -15,12 +15,12 @@ function handleFiles(e) {
   const files = Array.from(e.target.files);
   files.forEach(file => {
     const reader = new FileReader();
-    reader.onload = () => processFile(reader.result);
+    reader.onload = () => routeFile(reader.result);
     reader.readAsText(file);
   });
 }
 
-/* ================= ROBUST CSV PARSER ================= */
+/* ================= CSV PARSER (ROBUST) ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -28,24 +28,24 @@ function parseCSV(text) {
   let inQuotes = false;
 
   for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const next = text[i + 1];
+    const c = text[i];
+    const n = text[i + 1];
 
-    if (char === '"' && inQuotes && next === '"') {
+    if (c === '"' && inQuotes && n === '"') {
       current += '"';
       i++;
-    } else if (char === '"') {
+    } else if (c === '"') {
       inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
+    } else if (c === "," && !inQuotes) {
       row.push(current.trim());
       current = "";
-    } else if (char === "\n" && !inQuotes) {
+    } else if (c === "\n" && !inQuotes) {
       row.push(current.trim());
       rows.push(row);
       row = [];
       current = "";
     } else {
-      current += char;
+      current += c;
     }
   }
 
@@ -54,47 +54,71 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= FILE ROUTER ================= */
-function processFile(csvText) {
-  const data = parseCSV(csvText);
-  const headers = data[0].map(h => h.toLowerCase().trim());
+/* ================= HEADER NORMALIZATION ================= */
+function normalize(h) {
+  return h
+    .toLowerCase()
+    .replace(/\ufeff/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
 
-  // STRICT HEADER DETECTION (NO GUESSING)
-  if (headers.includes("placement")) {
-    processPlacement(data);
-  } else if (headers.includes("campaign name") && headers.includes("ad spend")) {
-    processCampaign(data);
+/* ================= ROUTER ================= */
+function routeFile(csvText) {
+  const data = parseCSV(csvText);
+  const rawHeaders = data[0];
+  const headers = rawHeaders.map(h => normalize(h));
+
+  // CAMPAIGN FILE IDENTIFICATION
+  const isCampaign =
+    headers.includes("campaignname") &&
+    headers.includes("adspend") &&
+    headers.includes("totalrevenuers");
+
+  // PLACEMENT FILE IDENTIFICATION
+  const isPlacement =
+    headers.includes("placement") &&
+    headers.includes("spend") &&
+    headers.includes("revenue");
+
+  if (isCampaign) {
+    processCampaign(data, headers);
+  }
+
+  if (isPlacement) {
+    processPlacement(data, headers);
   }
 }
 
 /* ================= CAMPAIGN PERFORMANCE ================= */
-function processCampaign(data) {
-  const headers = data[0];
+function processCampaign(data, headers) {
   const rows = data.slice(1);
 
-  const idx = h => headers.indexOf(h);
-
-  const CAMPAIGN = idx("Campaign Name");
-  const SPEND = idx("Ad Spend");
-  const UNITS = idx("Total Converted Units");
-  const REVENUE = idx("Total Revenue (Rs.)");
+  const IDX = {
+    CAMPAIGN: headers.indexOf("campaignname"),
+    SPEND: headers.indexOf("adspend"),
+    UNITS: headers.indexOf("totalconvertedunits"),
+    REVENUE: headers.indexOf("totalrevenuers")
+  };
 
   let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
   const campaigns = {};
 
   rows.forEach(r => {
-    const name = r[CAMPAIGN];
+    const name = r[IDX.CAMPAIGN];
     if (!name) return;
 
-    const spend = +r[SPEND] || 0;
-    const units = +r[UNITS] || 0;
-    const revenue = +r[REVENUE] || 0;
+    const spend = parseFloat(r[IDX.SPEND]) || 0;
+    const units = parseFloat(r[IDX.UNITS]) || 0;
+    const revenue = parseFloat(r[IDX.REVENUE]) || 0;
 
     totalSpend += spend;
     totalRevenue += revenue;
     totalUnits += units;
 
-    if (!campaigns[name]) campaigns[name] = { spend: 0, revenue: 0, units: 0 };
+    if (!campaigns[name]) {
+      campaigns[name] = { spend: 0, revenue: 0, units: 0 };
+    }
+
     campaigns[name].spend += spend;
     campaigns[name].revenue += revenue;
     campaigns[name].units += units;
@@ -128,35 +152,37 @@ function processCampaign(data) {
 }
 
 /* ================= PLACEMENT PERFORMANCE ================= */
-function processPlacement(data) {
-  const headers = data[0];
+function processPlacement(data, headers) {
   const rows = data.slice(1);
 
-  const idx = h => headers.indexOf(h);
-
-  const CAMPAIGN = idx("Campaign Name");
-  const PLACEMENT = idx("Placement");
-  const SPEND = idx("Spend");
-  const UNITS = idx("Units");
-  const REVENUE = idx("Revenue");
+  const IDX = {
+    CAMPAIGN: headers.indexOf("campaignname"),
+    PLACEMENT: headers.indexOf("placement"),
+    SPEND: headers.indexOf("spend"),
+    UNITS: headers.indexOf("units"),
+    REVENUE: headers.indexOf("revenue")
+  };
 
   const tbody = document.querySelector("#placementTable tbody");
   tbody.innerHTML = "";
 
   rows.forEach(r => {
-    if (!r[PLACEMENT]) return;
+    const placement = r[IDX.PLACEMENT];
+    if (!placement) return;
 
-    const spend = +r[SPEND] || 0;
-    const revenue = +r[REVENUE] || 0;
+    const spend = parseFloat(r[IDX.SPEND]) || 0;
+    const revenue = parseFloat(r[IDX.REVENUE]) || 0;
+    const units = parseFloat(r[IDX.UNITS]) || 0;
+
     const roi = spend ? (revenue / spend).toFixed(2) : "∞";
 
     tbody.innerHTML += `
       <tr>
-        <td>${r[CAMPAIGN]}</td>
-        <td>${r[PLACEMENT]}</td>
+        <td>${r[IDX.CAMPAIGN]}</td>
+        <td>${placement}</td>
         <td>${spend.toFixed(0)}</td>
         <td>${revenue.toFixed(0)}</td>
-        <td>${r[UNITS]}</td>
+        <td>${units}</td>
         <td>${roi}</td>
       </tr>
     `;
