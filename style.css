@@ -38,10 +38,7 @@ body {
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* ===================================================== */
-/* ================= DAILY REPORT KPI ================== */
-/* ===================================================== */
-
+/* ================= KPI ================= */
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr));
@@ -55,6 +52,17 @@ body {
   padding: 18px 16px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.06);
   text-align: center;
+}
+
+.kpi div:first-child {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+}
+
+.kpi div:last-child {
+  font-size: 22px;
+  font-weight: 800;
 }
 
 /* ================= TABLE BASE ================= */
@@ -77,8 +85,6 @@ th {
   text-transform: uppercase;
   font-weight: 700;
   font-size: 12px;
-  letter-spacing: 0.4px;
-  color: #374151;
   border-bottom: 2px solid #e5e7eb;
   position: sticky;
   top: 0;
@@ -94,27 +100,19 @@ td {
   padding: 10px 14px;
   border-bottom: 1px solid #eef2f7;
   vertical-align: middle;
+  text-align: right;
 }
 
-/* ================= ZEBRA & HOVER ================= */
+td:first-child { text-align: left; }
+
+/* ================= ZEBRA ================= */
 tbody tr:nth-child(even) { background: #fafafa; }
 tbody tr:hover { background: #f1f5ff; }
 
-/* ===================================================== */
-/* ================= DAILY REPORT TABLE ================= */
-/* ===================================================== */
-
-/* Campaign Name */
+/* ================= DAILY REPORT ================= */
 #campaign table th:nth-child(1),
-#campaign table td:nth-child(1) {
-  width: 32%;
-  text-align: left;
-  white-space: normal;
-  word-break: break-word;
-  font-weight: 600;
-}
+#campaign table td:nth-child(1) { width: 32%; }
 
-/* Numeric columns */
 #campaign table th:nth-child(2),
 #campaign table td:nth-child(2),
 #campaign table th:nth-child(3),
@@ -122,26 +120,20 @@ tbody tr:hover { background: #f1f5ff; }
 #campaign table th:nth-child(4),
 #campaign table td:nth-child(4),
 #campaign table th:nth-child(5),
-#campaign table td:nth-child(5) {
-  width: 13%;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
+#campaign table td:nth-child(5) { width: 13%; }
 
-/* Audit Status */
 #campaign table th:nth-child(6),
 #campaign table td:nth-child(6) {
-  width: 17%;
+  width: 16%;
   text-align: center;
-  white-space: nowrap;
 }
 
-/* Audit Status alignment FIX */
+/* Audit Status fix */
 #campaign table td:last-child {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   font-weight: 700;
 }
 
@@ -159,124 +151,27 @@ tbody tr:hover { background: #f1f5ff; }
   z-index: 4;
 }
 
-/* ===================================================== */
-/* ================= ROI BADGES ========================= */
-/* ===================================================== */
+/* ================= ROI COLORS ================= */
+.roi-green { background:#e7f8ef!important;color:#0f7a3d;font-weight:800; }
+.roi-orange{ background:#fff4d6!important;color:#b36b00;font-weight:800; }
+.roi-red   { background:#ffe5e5!important;color:#b30000;font-weight:800; }
 
-.roi-green {
-  background: #e7f8ef !important;
-  color: #0f7a3d;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-weight: 800;
-}
-
-.roi-orange {
-  background: #fff4d6 !important;
-  color: #b36b00;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-weight: 800;
-}
-
-.roi-red {
-  background: #ffe5e5 !important;
-  color: #b30000;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-weight: 800;
-}
-
-/* ===================================================== */
-/* ========== PLACEMENT – OVERALL TABLE FIX ============= */
-/* ===================================================== */
-
-#placementOverallTable th:nth-child(1),
-#placementOverallTable td:nth-child(1) {
-  width: 38%;
-  text-align: left;
-}
-
-#placementOverallTable th:nth-child(2),
-#placementOverallTable td:nth-child(2),
-#placementOverallTable th:nth-child(3),
-#placementOverallTable td:nth-child(3),
-#placementOverallTable th:nth-child(4),
-#placementOverallTable td:nth-child(4),
-#placementOverallTable th:nth-child(5),
-#placementOverallTable td:nth-child(5) {
-  width: 15%;
-  text-align: right;
-}
-
-/* ===================================================== */
-/* ===== PLACEMENT – CAMPAIGN-WISE TABLE FIX ============= */
-/* ===================================================== */
-
-/* Campaign summary row */
+/* ================= PLACEMENT ================= */
 .campaign-group {
-  background: linear-gradient(90deg, #eef3fa, #f8fafc) !important;
-  font-weight: 800;
-  cursor: pointer;
+  background: linear-gradient(90deg,#eef3fa,#f8fafc)!important;
+  font-weight:800;
+  cursor:pointer;
 }
 
-.campaign-group td {
-  text-align: right;
-}
-
-.campaign-group td:first-child {
-  text-align: left;
-}
-
-/* Expanded placement rows */
-.hidden-row td:nth-child(2) {
-  padding-left: 28px;
-}
-
-/* Best placement */
-.best-placement {
-  background: linear-gradient(
-    90deg,
-    rgba(40,167,69,0.15),
-    transparent
-  ) !important;
-  border-left: 4px solid #22c55e;
-}
-
-/* ===================================================== */
-/* ================= ACTION BUTTONS ===================== */
-/* ===================================================== */
-
-.placement-actions {
-  margin: 14px 0;
-}
-
-.placement-actions button {
-  padding: 6px 16px;
-  border-radius: 999px;
-  border: none;
-  background: #eef2f7;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  margin-right: 6px;
-}
-
-.placement-actions button:hover {
-  background: #dbe4f3;
+/* 🔥 THE REAL FIX — FORCE COLLAPSE */
+tr.hidden-row {
+  display: none !important;
 }
 
 /* ================= MOBILE ================= */
-@media (max-width: 768px) {
-  .kpis {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
+@media(max-width:768px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  table{display:block;overflow-x:auto;white-space:nowrap}
 }
 
 /* ================= FOOTER ================= */
@@ -286,77 +181,3 @@ tbody tr:hover { background: #f1f5ff; }
   font-size: 13px;
   color: #6b7280;
 }
-
-/* ===== PLACEMENT TABLE ALIGNMENT FIX ===== */
-
-#placementOverallTable th,
-#placementOverallTable td,
-#placementCampaignTable th,
-#placementCampaignTable td {
-  text-align: right;
-}
-
-#placementOverallTable th:first-child,
-#placementOverallTable td:first-child,
-#placementCampaignTable th:first-child,
-#placementCampaignTable td:first-child,
-#placementCampaignTable td:nth-child(2),
-#placementCampaignTable th:nth-child(2) {
-  text-align: left;
-}
-
-/* Ensure consistent column widths */
-#placementOverallTable th:nth-child(1),
-#placementOverallTable td:nth-child(1) { width: 38%; }
-
-#placementOverallTable th:nth-child(n+2),
-#placementOverallTable td:nth-child(n+2) { width: 15%; }
-
-#placementCampaignTable th:nth-child(1),
-#placementCampaignTable td:nth-child(1) { width: 32%; }
-
-#placementCampaignTable th:nth-child(2),
-#placementCampaignTable td:nth-child(2) { width: 26%; }
-
-#placementCampaignTable th:nth-child(n+3),
-#placementCampaignTable td:nth-child(n+3) { width: 10%; }
-/* ===== DAILY REPORT ALIGN LIKE PLACEMENT ===== */
-
-#campaign table th,
-#campaign table td {
-  text-align: right;
-}
-
-#campaign table th:first-child,
-#campaign table td:first-child {
-  text-align: left;
-}
-
-#campaign table th:last-child,
-#campaign table td:last-child {
-  text-align: center;
-}
-
-/* Remove visual inconsistency */
-#campaign table td:last-child {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
-/* Column widths same rhythm as Placement */
-#campaign table th:nth-child(1),
-#campaign table td:nth-child(1) { width: 32%; }
-
-#campaign table th:nth-child(2),
-#campaign table td:nth-child(2),
-#campaign table th:nth-child(3),
-#campaign table td:nth-child(3),
-#campaign table th:nth-child(4),
-#campaign table td:nth-child(4),
-#campaign table th:nth-child(5),
-#campaign table td:nth-child(5) { width: 13%; }
-
-#campaign table th:nth-child(6),
-#campaign table td:nth-child(6) { width: 16%; }
