@@ -320,3 +320,43 @@ tbody tr:hover { background: #f1f5ff; }
 
 #placementCampaignTable th:nth-child(n+3),
 #placementCampaignTable td:nth-child(n+3) { width: 10%; }
+/* ===== DAILY REPORT ALIGN LIKE PLACEMENT ===== */
+
+#campaign table th,
+#campaign table td {
+  text-align: right;
+}
+
+#campaign table th:first-child,
+#campaign table td:first-child {
+  text-align: left;
+}
+
+#campaign table th:last-child,
+#campaign table td:last-child {
+  text-align: center;
+}
+
+/* Remove visual inconsistency */
+#campaign table td:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Column widths same rhythm as Placement */
+#campaign table th:nth-child(1),
+#campaign table td:nth-child(1) { width: 32%; }
+
+#campaign table th:nth-child(2),
+#campaign table td:nth-child(2),
+#campaign table th:nth-child(3),
+#campaign table td:nth-child(3),
+#campaign table th:nth-child(4),
+#campaign table td:nth-child(4),
+#campaign table th:nth-child(5),
+#campaign table td:nth-child(5) { width: 13%; }
+
+#campaign table th:nth-child(6),
+#campaign table td:nth-child(6) { width: 16%; }
