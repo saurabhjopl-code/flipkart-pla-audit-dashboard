@@ -328,3 +328,20 @@ function generatePlacement() {
 
   reader.readAsText(file);
 }
+function expandAllCampaigns() {
+  document.querySelectorAll("[data-parent]").forEach(r => {
+    r.classList.remove("hidden-row");
+  });
+  document.querySelectorAll(".campaign-toggle").forEach(i => {
+    i.textContent = "▼";
+  });
+}
+
+function collapseAllCampaigns() {
+  document.querySelectorAll("[data-parent]").forEach(r => {
+    r.classList.add("hidden-row");
+  });
+  document.querySelectorAll(".campaign-toggle").forEach(i => {
+    i.textContent = "▶";
+  });
+}
