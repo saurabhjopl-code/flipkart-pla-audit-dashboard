@@ -1,18 +1,20 @@
+/* ================= TAB SWITCH ================= */
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.onclick = () => {
+    btn.addEventListener("click", () => {
       document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
       btn.classList.add("active");
       document.getElementById(btn.dataset.tab).classList.add("active");
-    };
+    });
   });
 });
 
-/* =============== CSV PARSER =============== */
+/* ================= CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [], cur = "", q = false;
+
   for (let i = 0; i < text.length; i++) {
     const c = text[i], n = text[i + 1];
     if (c === '"' && q && n === '"') { cur += '"'; i++; }
@@ -26,152 +28,144 @@ function parseCSV(text) {
   return rows;
 }
 
-/* =============== PERIOD EXTRACTION =============== */
-function extractReportPeriod(rows) {
-  let start = "", end = "";
-  rows.slice(0, 5).forEach(row => {
-    const line = row.join(" ").trim();
-    if (/start\s*time/i.test(line)) start = line.replace(/.*:/, "").trim();
-    if (/end\s*time/i.test(line)) end = line.replace(/.*:/, "").trim();
-  });
-  return { start, end };
-}
-
+/* ================= AUTO HEADER ================= */
 function autoDetectHeader(rows, required) {
   for (let i = 0; i < Math.min(10, rows.length); i++) {
-    const match = required.filter(h => rows[i].includes(h)).length;
-    if (match >= 2) return i;
+    const found = required.filter(h => rows[i].includes(h)).length;
+    if (found >= 2) return i;
   }
-  throw "Header row not found";
+  throw new Error("Placement CSV header not found");
 }
 
-function toggleSection(id) {
-  const el = document.getElementById(id);
-  el.style.display = el.style.display === "none" ? "block" : "none";
-}
+const roiClass = r => r < 3 ? "roi-red" : r <= 5 ? "roi-orange" : "roi-green";
 
-/* =============== WEEK RANGE =============== */
-function getWeekRange(dateStr) {
-  const d = new Date(dateStr);
-  const day = d.getDay() || 7;
-  const start = new Date(d);
-  start.setDate(d.getDate() - day + 1);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
+/* ================= PLACEMENT REPORT (FINAL) ================= */
+function generatePlacement() {
+  const fileInput = document.getElementById("placementFile");
+  if (!fileInput || !fileInput.files.length) {
+    alert("Please upload Placement Performance CSV");
+    return;
+  }
 
-  const format = x =>
-    x.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const rows = parseCSV(reader.result);
 
-  const weekNo = Math.ceil(
-    (((start - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) / 7
-  );
+      const headerRow = autoDetectHeader(rows, [
+        "Campaign Name",
+        "Placement Type",
+        "Ad Spend"
+      ]);
 
-  return {
-    key: `W${weekNo}-${d.getFullYear()}`,
-    label: `Week ${weekNo} (${format(start)} – ${format(end)})`
-  };
-}
+      const headers = rows[headerRow];
+      const data = rows.slice(headerRow + 1);
+      const h = n => headers.indexOf(n);
 
-/* =============== DAILY REPORT =============== */
-function generateCampaign() {
-  const f = campaignFile.files[0];
-  if (!f) return;
+      const overall = {};
+      const campaignMap = {};
 
-  const r = new FileReader();
-  r.onload = () => {
-    const rows = parseCSV(r.result);
-    const period = extractReportPeriod(rows);
-    if (period.start || period.end) {
-      reportPeriod.innerHTML = `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
+      data.forEach(r => {
+        const campaign = r[h("Campaign Name")];
+        const campaignId = r[h("Campaign ID")];
+        const placement = r[h("Placement Type")];
+
+        if (!campaign || !placement) return;
+
+        const spend = +r[h("Ad Spend")] || 0;
+        const units =
+          (+r[h("Direct Units Sold")] || 0) +
+          (+r[h("Indirect Units Sold")] || 0);
+        const revenue =
+          (+r[h("Direct Revenue")] || 0) +
+          (+r[h("Indirect Revenue")] || 0);
+
+        /* Overall */
+        if (!overall[placement]) overall[placement] = { s: 0, r: 0, u: 0 };
+        overall[placement].s += spend;
+        overall[placement].r += revenue;
+        overall[placement].u += units;
+
+        /* Campaign-wise */
+        if (!campaignMap[campaign]) campaignMap[campaign] = { id: campaignId, rows: {} };
+        if (!campaignMap[campaign].rows[placement])
+          campaignMap[campaign].rows[placement] = { s: 0, r: 0, u: 0 };
+
+        campaignMap[campaign].rows[placement].s += spend;
+        campaignMap[campaign].rows[placement].r += revenue;
+        campaignMap[campaign].rows[placement].u += units;
+      });
+
+      /* ================= Overall Table ================= */
+      const overallBody = document.querySelector("#placementOverallTable tbody");
+      overallBody.innerHTML = "";
+
+      Object.entries(overall).forEach(([p, v]) => {
+        const roi = v.s ? v.r / v.s : 0;
+        overallBody.innerHTML += `
+          <tr class="${roiClass(roi)}">
+            <td>${p}</td>
+            <td>${v.s.toFixed(0)}</td>
+            <td>${v.r.toFixed(0)}</td>
+            <td>${v.u}</td>
+            <td>${roi.toFixed(2)}</td>
+          </tr>`;
+      });
+
+      /* ================= Campaign-wise ================= */
+      const tbody = document.querySelector("#placementCampaignTable tbody");
+      tbody.innerHTML = "";
+      let i = 0;
+
+      Object.entries(campaignMap).forEach(([c, obj]) => {
+        const gid = `grp-${i++}`;
+
+        const totals = Object.values(obj.rows).reduce(
+          (a, v) => ({ s: a.s + v.s, r: a.r + v.r, u: a.u + v.u }),
+          { s: 0, r: 0, u: 0 }
+        );
+
+        tbody.innerHTML += `
+          <tr class="campaign-group" data-group="${gid}">
+            <td><span class="campaign-toggle">▶</span> ${c} (${obj.id})</td>
+            <td></td>
+            <td>${totals.s.toFixed(0)}</td>
+            <td>${totals.r.toFixed(0)}</td>
+            <td>${totals.u}</td>
+            <td>${(totals.r / totals.s).toFixed(2)}</td>
+          </tr>`;
+
+        Object.entries(obj.rows).forEach(([p, v]) => {
+          const roi = v.s ? v.r / v.s : 0;
+          tbody.innerHTML += `
+            <tr class="hidden-row ${roiClass(roi)}" data-parent="${gid}">
+              <td></td>
+              <td>${p}</td>
+              <td>${v.s.toFixed(0)}</td>
+              <td>${v.r.toFixed(0)}</td>
+              <td>${v.u}</td>
+              <td>${roi.toFixed(2)}</td>
+            </tr>`;
+        });
+      });
+
+      /* ================= Toggle ================= */
+      document.querySelectorAll(".campaign-group").forEach(row => {
+        row.onclick = () => {
+          const g = row.dataset.group;
+          const rows = document.querySelectorAll(`[data-parent="${g}"]`);
+          const icon = row.querySelector(".campaign-toggle");
+          const collapsed = rows[0].classList.contains("hidden-row");
+          rows.forEach(r => r.classList.toggle("hidden-row", !collapsed));
+          icon.textContent = collapsed ? "▼" : "▶";
+        };
+      });
+
+    } catch (e) {
+      console.error(e);
+      alert("Placement report failed. Check console for details.");
     }
-
-    const hRow = autoDetectHeader(rows, ["Campaign Name", "Ad Spend"]);
-    const headers = rows[hRow];
-    const data = rows.slice(hRow + 1);
-    const h = n => headers.indexOf(n);
-
-    let S=0,R=0,U=0,map={}, dailyMap={};
-
-    data.forEach(x=>{
-      const c=x[h("Campaign Name")];
-      const d=x[h("Date")];
-      if(!c) return;
-
-      const s=+x[h("Ad Spend")]||0;
-      const r=+x[h("Total Revenue (Rs.)")]||0;
-      const u=+x[h("Total converted units")]||0;
-
-      S+=s;R+=r;U+=u;
-
-      if(!map[c]) map[c]={s:0,r:0,u:0};
-      map[c].s+=s; map[c].r+=r; map[c].u+=u;
-
-      if(d){
-        if(!dailyMap[d]) dailyMap[d]={s:0,r:0,u:0};
-        dailyMap[d].s+=s; dailyMap[d].r+=r; dailyMap[d].u+=u;
-      }
-    });
-
-    campaignKpi.innerHTML = `
-      <div class="kpi">Spend<br>₹${S.toFixed(0)}</div>
-      <div class="kpi">Revenue<br>₹${R.toFixed(0)}</div>
-      <div class="kpi">ROI<br>${(R/S).toFixed(2)}</div>
-      <div class="kpi">Units<br>${U}</div>
-    `;
-
-    const tb = campaignTable.querySelector("tbody");
-    tb.innerHTML = "";
-    Object.entries(map).sort((a,b)=>b[1].s-a[1].s).forEach(([n,c])=>{
-      const roi=c.r/c.s;
-      const flag=roi<3?"🔴 Loss":roi<=5?"🟠 Optimize":"🟢 Scale";
-      tb.innerHTML+=`
-        <tr>
-          <td>${n}</td>
-          <td>${c.s.toFixed(0)}</td>
-          <td>${c.r.toFixed(0)}</td>
-          <td>${c.u}</td>
-          <td>${roi.toFixed(2)}</td>
-          <td>${flag}</td>
-        </tr>`;
-    });
-
-    /* Day-to-Day */
-    const dailyBody=document.querySelector("#dailyTrendTable tbody");
-    dailyBody.innerHTML="";
-    Object.keys(dailyMap).sort((a,b)=>new Date(a)-new Date(b)).forEach(d=>{
-      const x=dailyMap[d];
-      dailyBody.innerHTML+=`
-        <tr>
-          <td>${d}</td>
-          <td>${x.s.toFixed(0)}</td>
-          <td>${x.u}</td>
-          <td>${x.r.toFixed(0)}</td>
-          <td>${(x.r/x.s).toFixed(2)}</td>
-        </tr>`;
-    });
-
-    /* Weekly */
-    const weeklyMap={};
-    Object.keys(dailyMap).forEach(d=>{
-      const wk=getWeekRange(d);
-      if(!weeklyMap[wk.key]) weeklyMap[wk.key]={label:wk.label,s:0,r:0,u:0};
-      weeklyMap[wk.key].s+=dailyMap[d].s;
-      weeklyMap[wk.key].r+=dailyMap[d].r;
-      weeklyMap[wk.key].u+=dailyMap[d].u;
-    });
-
-    const weeklyBody=document.querySelector("#weeklyTrendTable tbody");
-    weeklyBody.innerHTML="";
-    Object.values(weeklyMap).forEach(w=>{
-      weeklyBody.innerHTML+=`
-        <tr>
-          <td>${w.label}</td>
-          <td>${w.s.toFixed(0)}</td>
-          <td>${w.u}</td>
-          <td>${w.r.toFixed(0)}</td>
-          <td>${(w.r/w.s).toFixed(2)}</td>
-        </tr>`;
-    });
   };
-  r.readAsText(f);
+
+  reader.readAsText(fileInput.files[0]);
 }
