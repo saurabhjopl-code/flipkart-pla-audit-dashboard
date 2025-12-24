@@ -38,7 +38,7 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= CAMPAIGN PERFORMANCE ================= */
+/* ================= CAMPAIGN ================= */
 function generateCampaign() {
   const file = document.getElementById("campaignFile").files[0];
   const errorBox = document.getElementById("campaignError");
@@ -111,11 +111,10 @@ function generateCampaign() {
         `;
       });
   };
-
   reader.readAsText(file);
 }
 
-/* ================= PLACEMENT PERFORMANCE ================= */
+/* ================= PLACEMENT ================= */
 function generatePlacement() {
   const file = document.getElementById("placementFile").files[0];
   const errorBox = document.getElementById("placementError");
@@ -140,33 +139,84 @@ function generatePlacement() {
       return;
     }
 
-    const tbody = document.querySelector("#placementTable tbody");
-    tbody.innerHTML = "";
+    const overall = {};
+    const pivot = {};
 
     data.slice(1).forEach(r => {
-      if (!r[h("Placement Type")]) return;
+      const campaign = r[h("Campaign Name")];
+      const placement = r[h("Placement Type")];
+      if (!campaign || !placement) return;
 
       const spend = +r[h("Ad Spend")] || 0;
       const units =
         (+r[h("Direct Units Sold")] || 0) +
         (+r[h("Indirect Units Sold")] || 0);
-
       const revenue =
         (+r[h("Direct Revenue")] || 0) +
         (+r[h("Indirect Revenue")] || 0);
 
-      const roi = spend ? (revenue / spend).toFixed(2) : "∞";
+      /* OVERALL */
+      if (!overall[placement]) overall[placement] = { spend: 0, revenue: 0, units: 0 };
+      overall[placement].spend += spend;
+      overall[placement].revenue += revenue;
+      overall[placement].units += units;
 
-      tbody.innerHTML += `
-        <tr>
-          <td>${r[h("Campaign Name")]}</td>
-          <td>${r[h("Placement Type")]}</td>
-          <td>${spend.toFixed(0)}</td>
-          <td>${revenue.toFixed(0)}</td>
-          <td>${units}</td>
-          <td>${roi}</td>
+      /* CAMPAIGN → PLACEMENT */
+      if (!pivot[campaign]) pivot[campaign] = {};
+      if (!pivot[campaign][placement]) {
+        pivot[campaign][placement] = { spend: 0, revenue: 0, units: 0 };
+      }
+
+      pivot[campaign][placement].spend += spend;
+      pivot[campaign][placement].revenue += revenue;
+      pivot[campaign][placement].units += units;
+    });
+
+    /* TABLE 1 */
+    const overallBody = document.querySelector("#placementOverallTable tbody");
+    overallBody.innerHTML = "";
+
+    Object.entries(overall)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
+      .forEach(([placement, c]) => {
+        const roi = c.spend ? (c.revenue / c.spend).toFixed(2) : "∞";
+        overallBody.innerHTML += `
+          <tr>
+            <td>${placement}</td>
+            <td>${c.spend.toFixed(0)}</td>
+            <td>${c.revenue.toFixed(0)}</td>
+            <td>${c.units}</td>
+            <td>${roi}</td>
+          </tr>
+        `;
+      });
+
+    /* TABLE 2 – PIVOT STYLE */
+    const campaignBody = document.querySelector("#placementCampaignTable tbody");
+    campaignBody.innerHTML = "";
+
+    Object.keys(pivot).forEach(campaign => {
+      campaignBody.innerHTML += `
+        <tr style="background:#f1f3f5;font-weight:600;">
+          <td colspan="6">${campaign}</td>
         </tr>
       `;
+
+      Object.entries(pivot[campaign])
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .forEach(([placement, c]) => {
+          const roi = c.spend ? (c.revenue / c.spend).toFixed(2) : "∞";
+          campaignBody.innerHTML += `
+            <tr>
+              <td></td>
+              <td>${placement}</td>
+              <td>${c.spend.toFixed(0)}</td>
+              <td>${c.revenue.toFixed(0)}</td>
+              <td>${c.units}</td>
+              <td>${roi}</td>
+            </tr>
+          `;
+        });
     });
   };
 
