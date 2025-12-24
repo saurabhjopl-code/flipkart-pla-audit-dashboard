@@ -1,3 +1,16 @@
+/* ================= TAB SWITCH (RESTORED) ================= */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+
+    btn.classList.add("active");
+    const target = btn.getAttribute("data-tab");
+    document.getElementById(target).classList.add("active");
+  });
+});
+
+
 /* ================= CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
