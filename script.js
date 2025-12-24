@@ -26,10 +26,10 @@ function parseCSV(text) {
     } else if (char === '"') {
       inQuotes = !inQuotes;
     } else if (char === "," && !inQuotes) {
-      row.push(current.trim());
+      row.push(current);
       current = "";
     } else if (char === "\n" && !inQuotes) {
-      row.push(current.trim());
+      row.push(current);
       rows.push(row);
       row = [];
       current = "";
@@ -38,7 +38,7 @@ function parseCSV(text) {
     }
   }
 
-  row.push(current.trim());
+  row.push(current);
   rows.push(row);
   return rows;
 }
@@ -46,55 +46,60 @@ function parseCSV(text) {
 /* ================= MAIN ================= */
 function processCSV(csvText) {
   const data = parseCSV(csvText);
-  const headers = data[0].map(h => h.trim());
+
+  // 🔑 CLEAN HEADERS (THIS IS THE FIX)
+  const headers = data[0].map(h =>
+    h.replace(/\ufeff/g, "")   // remove BOM
+     .replace(/\s+/g, " ")     // normalize spaces
+     .trim()
+  );
+
   const rows = data.slice(1);
 
-  // 🔑 HEADER INDEX MAPPING (THIS IS THE FIX)
-  const idx = name => headers.indexOf(name);
+  // FIXED POSITION MAPPING (FORMAT WILL NEVER CHANGE)
+  const IDX = {
+    CAMPAIGN: headers.indexOf("Campaign Name"),
+    DATE: headers.indexOf("Date"),
+    SPEND: headers.indexOf("Ad Spend"),
+    VIEWS: headers.indexOf("Views"),
+    CLICKS: headers.indexOf("Clicks"),
+    UNITS: headers.indexOf("Total Converted Units"),
+    REVENUE: headers.indexOf("Total Revenue (Rs.)")
+  };
 
-  const CAMPAIGN = idx("Campaign Name");
-  const DATE     = idx("Date");
-  const SPEND    = idx("Ad Spend");
-  const VIEWS    = idx("Views");
-  const CLICKS   = idx("Clicks");
-  const UNITS    = idx("Total Converted Units");
-  const REVENUE  = idx("Total Revenue (Rs.)");
-
-  if ([CAMPAIGN, DATE, SPEND, VIEWS, CLICKS, UNITS, REVENUE].includes(-1)) {
-    alert("CSV headers do not match required format.");
-    return;
-  }
-
-  let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
-  let totalViews = 0, totalClicks = 0;
+  let totalSpend = 0,
+      totalRevenue = 0,
+      totalUnits = 0,
+      totalViews = 0,
+      totalClicks = 0;
 
   const daily = {};
   const campaigns = {};
 
   rows.forEach(r => {
-    const campaign = r[CAMPAIGN];
-    const date = r[DATE];
-    const spend = parseFloat(r[SPEND]) || 0;
-    const views = parseInt(r[VIEWS]) || 0;
-    const clicks = parseInt(r[CLICKS]) || 0;
-    const units = parseInt(r[UNITS]) || 0;
-    const revenue = parseFloat(r[REVENUE]) || 0;
-
+    const campaign = r[IDX.CAMPAIGN];
     if (!campaign) return;
 
-    /* totals */
+    const date = r[IDX.DATE];
+    const spend = parseFloat(r[IDX.SPEND]) || 0;
+    const views = parseInt(r[IDX.VIEWS]) || 0;
+    const clicks = parseInt(r[IDX.CLICKS]) || 0;
+    const units = parseInt(r[IDX.UNITS]) || 0;
+    const revenue = parseFloat(r[IDX.REVENUE]) || 0;
+
+    /* TOTALS */
     totalSpend += spend;
     totalRevenue += revenue;
     totalUnits += units;
     totalViews += views;
     totalClicks += clicks;
 
-    /* daily */
+    /* DAILY TREND */
     if (!daily[date]) daily[date] = { spend: 0, revenue: 0 };
     daily[date].spend += spend;
     daily[date].revenue += revenue;
 
-    /* campaign consolidation */
+    /* CAMPAIGN CONSOLIDATION */
     if (!campaigns[campaign]) {
       campaigns[campaign] = { spend: 0, revenue: 0, units: 0 };
     }
