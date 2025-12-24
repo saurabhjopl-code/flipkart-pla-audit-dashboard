@@ -133,14 +133,24 @@ function renderCampaignTable(campaigns) {
   const tbody = document.querySelector("#campaignTable tbody");
   tbody.innerHTML = "";
 
-  Object.keys(campaigns).forEach(name => {
-    const c = campaigns[name];
+  // 🔥 SORT: Spend high → low
+  const sortedCampaigns = Object.entries(campaigns)
+    .sort((a, b) => b[1].spend - a[1].spend);
+
+  sortedCampaigns.forEach(([name, c]) => {
     const roi = c.spend > 0 ? c.revenue / c.spend : Infinity;
 
     let cls, flag;
-    if (roi < 3) { cls = "red"; flag = "🔴 Loss / Critical"; }
-    else if (roi <= 5) { cls = "orange"; flag = "🟠 Needs Optimization"; }
-    else { cls = "green"; flag = "🟢 Scale Candidate"; }
+    if (roi < 3) {
+      cls = "red";
+      flag = "🔴 Loss / Critical";
+    } else if (roi <= 5) {
+      cls = "orange";
+      flag = "🟠 Needs Optimization";
+    } else {
+      cls = "green";
+      flag = "🟢 Scale Candidate";
+    }
 
     tbody.innerHTML += `
       <tr class="${cls}">
