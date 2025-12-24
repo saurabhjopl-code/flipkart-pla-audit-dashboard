@@ -43,28 +43,29 @@ function parseCSV(text) {
   return rows;
 }
 
+/* ================= HEADER NORMALIZATION ================= */
+function normalize(h) {
+  return h
+    .toLowerCase()
+    .replace(/\ufeff/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
 /* ================= MAIN ================= */
 function processCSV(csvText) {
   const data = parseCSV(csvText);
-
-  // 🔑 CLEAN HEADERS (THIS IS THE FIX)
-  const headers = data[0].map(h =>
-    h.replace(/\ufeff/g, "")   // remove BOM
-     .replace(/\s+/g, " ")     // normalize spaces
-     .trim()
-  );
-
+  const rawHeaders = data[0];
+  const headers = rawHeaders.map(h => normalize(h));
   const rows = data.slice(1);
 
-  // FIXED POSITION MAPPING (FORMAT WILL NEVER CHANGE)
   const IDX = {
-    CAMPAIGN: headers.indexOf("Campaign Name"),
-    DATE: headers.indexOf("Date"),
-    SPEND: headers.indexOf("Ad Spend"),
-    VIEWS: headers.indexOf("Views"),
-    CLICKS: headers.indexOf("Clicks"),
-    UNITS: headers.indexOf("Total Converted Units"),
-    REVENUE: headers.indexOf("Total Revenue (Rs.)")
+    CAMPAIGN: headers.findIndex(h => h.includes("campaignname")),
+    DATE: headers.findIndex(h => h === "date"),
+    SPEND: headers.findIndex(h => h.includes("spend")),
+    VIEWS: headers.findIndex(h => h.includes("view")),
+    CLICKS: headers.findIndex(h => h.includes("click")),
+    UNITS: headers.findIndex(h => h.includes("unit")),
+    REVENUE: headers.findIndex(h => h.includes("revenue"))
   };
 
   let totalSpend = 0,
@@ -94,7 +95,7 @@ function processCSV(csvText) {
     totalViews += views;
     totalClicks += clicks;
 
-    /* DAILY TREND */
+    /* DAILY */
     if (!daily[date]) daily[date] = { spend: 0, revenue: 0 };
     daily[date].spend += spend;
     daily[date].revenue += revenue;
@@ -110,9 +111,7 @@ function processCSV(csvText) {
   });
 
   renderKPIs(totalSpend, totalRevenue, totalUnits, totalClicks);
-  renderFunnel(totalViews, totalClicks, totalUnits);
   renderCampaignTable(campaigns);
-  renderTrend(daily);
 }
 
 /* ================= KPI ================= */
@@ -127,19 +126,6 @@ function renderKPIs(spend, revenue, units, clicks) {
     <div class="kpi">Clicks<br>${clicks}</div>
     <div class="kpi">Units<br>${units}</div>
   `;
-}
-
-/* ================= FUNNEL ================= */
-function renderFunnel(views, clicks, units) {
-  document.getElementById("views").innerText = views;
-  document.getElementById("clicks").innerText = clicks;
-  document.getElementById("units").innerText = units;
-
-  document.getElementById("ctr").innerText =
-    views ? ((clicks / views) * 100).toFixed(2) + "%" : "0%";
-
-  document.getElementById("conversion").innerText =
-    clicks ? ((units / clicks) * 100).toFixed(2) + "%" : "0%";
 }
 
 /* ================= TABLE ================= */
@@ -166,32 +152,5 @@ function renderCampaignTable(campaigns) {
         <td>${flag}</td>
       </tr>
     `;
-  });
-}
-
-/* ================= TREND ================= */
-function renderTrend(data) {
-  const labels = Object.keys(data).sort();
-  const spend = labels.map(d => data[d].spend);
-  const revenue = labels.map(d => data[d].revenue);
-  const roi = labels.map((d, i) => spend[i] ? revenue[i] / spend[i] : 0);
-
-  if (trendChart) trendChart.destroy();
-
-  trendChart = new Chart(document.getElementById("trendChart"), {
-    type: "line",
-    data: {
-      labels,
-      datasets: [
-        { label: "Spend", data: spend },
-        { label: "Revenue", data: revenue },
-        { label: "ROI", data: roi, yAxisID: "y1" }
-      ]
-    },
-    options: {
-      scales: {
-        y1: { position: "right", grid: { drawOnChartArea: false } }
-      }
-    }
   });
 }
