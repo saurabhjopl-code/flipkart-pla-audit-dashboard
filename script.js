@@ -175,8 +175,3 @@ function generateCampaign() {
   };
   r.readAsText(f);
 }
-
-/* =============== PLACEMENT REPORT =============== */
-function generatePlacement() {
-  /* unchanged – already stable */
-}
