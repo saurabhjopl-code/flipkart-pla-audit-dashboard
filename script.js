@@ -48,13 +48,22 @@ function autoDetectHeader(rows, requiredHeaders) {
  ***********************/
 function extractReportPeriod(rows) {
   let start = "", end = "";
+
   rows.slice(0, 5).forEach(r => {
     const line = r.join(" ").trim();
-    if (/start\s*time/i.test(line)) start = line.replace(/.*:/, "").trim();
-    if (/end\s*time/i.test(line)) end = line.replace(/.*:/, "").trim();
+
+    if (/start\s*time/i.test(line)) {
+      start = line.replace(/.*start\s*time\s*:/i, "").trim();
+    }
+
+    if (/end\s*time/i.test(line)) {
+      end = line.replace(/.*end\s*time\s*:/i, "").trim();
+    }
   });
+
   return { start, end };
 }
+
 
 /***********************
  * WEEK RANGE
