@@ -9,19 +9,24 @@
 
 <header class="header">
   <h2>Flipkart PLA Audit Dashboard</h2>
-  <input type="file" id="fileInput" multiple accept=".csv">
 </header>
 
-<!-- TABS -->
 <div class="tabs">
   <button class="tab-btn active" data-tab="campaign">Campaign Performance</button>
   <button class="tab-btn" data-tab="placement">Placement Performance</button>
 </div>
 
-<!-- CAMPAIGN TAB -->
+<!-- ================= CAMPAIGN ================= -->
 <section id="campaign" class="tab-content active">
   <h3>Campaign Performance</h3>
+
+  <input type="file" id="campaignFile" accept=".csv">
+  <button onclick="generateCampaign()">Generate Report</button>
+
+  <div id="campaignError" class="error"></div>
+
   <div id="campaignKpi" class="kpis"></div>
+
   <table id="campaignTable">
     <thead>
       <tr>
@@ -30,16 +35,22 @@
         <th>Revenue (₹)</th>
         <th>Units</th>
         <th>ROI</th>
-        <th>Status</th>
+        <th>Audit Status</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </section>
 
-<!-- PLACEMENT TAB -->
+<!-- ================= PLACEMENT ================= -->
 <section id="placement" class="tab-content">
   <h3>Placement Performance</h3>
+
+  <input type="file" id="placementFile" accept=".csv">
+  <button onclick="generatePlacement()">Generate Report</button>
+
+  <div id="placementError" class="error"></div>
+
   <table id="placementTable">
     <thead>
       <tr>
@@ -57,7 +68,7 @@
 
 <footer class="footer">
   <strong>Made by Saurabh Mondal</strong><br>
-  Contact: +91-8200611920 | 
+  Contact: +91-8200611920 |
   <a href="mailto:saurabhpmondal@gmail.com">saurabhpmondal@gmail.com</a><br>
   © 2025 · Flipkart PLA Audit Dashboard · v1.0
 </footer>
