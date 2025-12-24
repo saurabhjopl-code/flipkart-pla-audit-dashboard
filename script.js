@@ -12,7 +12,6 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
 function parseCSV(text) {
   const rows = [];
   let row = [], current = "", inQuotes = false;
-
   for (let i = 0; i < text.length; i++) {
     const c = text[i], n = text[i + 1];
     if (c === '"' && inQuotes && n === '"') { current += '"'; i++; }
@@ -28,43 +27,40 @@ function parseCSV(text) {
 
 const roiClass = roi => roi < 3 ? "roi-red" : roi <= 5 ? "roi-orange" : "roi-green";
 
-/* ================= CAMPAIGN ================= */
+/* DAILY REPORT (LOGIC LOCKED) */
 function generateCampaign() {
   const file = campaignFile.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = () => {
-    const data = parseCSV(reader.result);
-    const h = n => data[0].indexOf(n);
-
+    const d = parseCSV(reader.result);
+    const h = n => d[0].indexOf(n);
     let spend=0,revenue=0,units=0,map={};
 
-    data.slice(1).forEach(r=>{
-      const name=r[h("Campaign Name")];
-      if(!name) return;
+    d.slice(1).forEach(r=>{
+      const n=r[h("Campaign Name")];
+      if(!n) return;
       const s=+r[h("Ad Spend")]||0;
       const rev=+r[h("Total Revenue (Rs.)")]||0;
       const u=+r[h("Total converted units")]||0;
-
       spend+=s; revenue+=rev; units+=u;
-      if(!map[name]) map[name]={spend:0,revenue:0,units:0};
-      map[name].spend+=s; map[name].revenue+=rev; map[name].units+=u;
+      if(!map[n]) map[n]={spend:0,revenue:0,units:0};
+      map[n].spend+=s; map[n].revenue+=rev; map[n].units+=u;
     });
 
     campaignKpi.innerHTML=`
       <div class="kpi">Spend<br>₹${spend.toFixed(0)}</div>
       <div class="kpi">Revenue<br>₹${revenue.toFixed(0)}</div>
       <div class="kpi">ROI<br>${(revenue/spend).toFixed(2)}</div>
-      <div class="kpi">Units<br>${units}</div>
-    `;
+      <div class="kpi">Units<br>${units}</div>`;
 
-    const tbody=campaignTable.querySelector("tbody");
-    tbody.innerHTML="";
+    const tb=campaignTable.querySelector("tbody");
+    tb.innerHTML="";
     Object.entries(map).sort((a,b)=>b[1].spend-a[1].spend).forEach(([n,c])=>{
       const roi=c.revenue/c.spend;
       const flag=roi<3?"🔴 Loss":roi<=5?"🟠 Optimize":"🟢 Scale";
-      tbody.innerHTML+=`
+      tb.innerHTML+=`
         <tr>
           <td>${n}</td><td>${c.spend.toFixed(0)}</td>
           <td>${c.revenue.toFixed(0)}</td><td>${c.units}</td>
@@ -75,42 +71,37 @@ function generateCampaign() {
   reader.readAsText(file);
 }
 
-/* ================= PLACEMENT ================= */
+/* PLACEMENT PERFORMANCE (LOGIC LOCKED) */
 function generatePlacement() {
   const file = placementFile.files[0];
   if (!file) return;
 
   const reader=new FileReader();
   reader.onload=()=>{
-    const data=parseCSV(reader.result);
-    const h=n=>data[0].indexOf(n);
+    const d=parseCSV(reader.result);
+    const h=n=>d[0].indexOf(n);
     const overall={},pivot={};
 
-    data.slice(1).forEach(r=>{
-      const camp=r[h("Campaign Name")];
-      const place=r[h("Placement Type")];
-      if(!camp||!place) return;
+    d.slice(1).forEach(r=>{
+      const c=r[h("Campaign Name")], p=r[h("Placement Type")];
+      if(!c||!p) return;
+      const s=+r[h("Ad Spend")]||0;
+      const u=(+r[h("Direct Units Sold")]||0)+(+r[h("Indirect Units Sold")]||0);
+      const rev=(+r[h("Direct Revenue")]||0)+(+r[h("Indirect Revenue")]||0);
 
-      const spend=+r[h("Ad Spend")]||0;
-      const units=(+r[h("Direct Units Sold")]||0)+(+r[h("Indirect Units Sold")]||0);
-      const revenue=(+r[h("Direct Revenue")]||0)+(+r[h("Indirect Revenue")]||0);
+      if(!overall[p]) overall[p]={spend:0,revenue:0,units:0};
+      overall[p].spend+=s; overall[p].revenue+=rev; overall[p].units+=u;
 
-      if(!overall[place]) overall[place]={spend:0,revenue:0,units:0};
-      overall[place].spend+=spend; overall[place].revenue+=revenue; overall[place].units+=units;
-
-      if(!pivot[camp]) pivot[camp]={};
-      if(!pivot[camp][place]) pivot[camp][place]={spend:0,revenue:0,units:0};
-      pivot[camp][place].spend+=spend;
-      pivot[camp][place].revenue+=revenue;
-      pivot[camp][place].units+=units;
+      if(!pivot[c]) pivot[c]={};
+      if(!pivot[c][p]) pivot[c][p]={spend:0,revenue:0,units:0};
+      pivot[c][p].spend+=s; pivot[c][p].revenue+=rev; pivot[c][p].units+=u;
     });
 
-    /* OVERALL TABLE */
-    const oBody=placementOverallTable.querySelector("tbody");
-    oBody.innerHTML="";
+    const oB=placementOverallTable.querySelector("tbody");
+    oB.innerHTML="";
     Object.entries(overall).forEach(([p,c])=>{
       const roi=c.revenue/c.spend;
-      oBody.innerHTML+=`
+      oB.innerHTML+=`
         <tr class="${roiClass(roi)}">
           <td>${p}</td><td>${c.spend.toFixed(0)}</td>
           <td>${c.revenue.toFixed(0)}</td><td>${c.units}</td>
@@ -118,24 +109,20 @@ function generatePlacement() {
         </tr>`;
     });
 
-    /* CAMPAIGN-WISE COLLAPSIBLE */
-    const cBody=placementCampaignTable.querySelector("tbody");
-    cBody.innerHTML="";
-
-    Object.keys(pivot).forEach((camp,idx)=>{
-      const group=`grp-${idx}`;
-      cBody.innerHTML+=`
-        <tr class="campaign-group" data-group="${group}">
+    const cB=placementCampaignTable.querySelector("tbody");
+    cB.innerHTML="";
+    Object.keys(pivot).forEach((camp,i)=>{
+      const g=`grp-${i}`;
+      cB.innerHTML+=`
+        <tr class="campaign-group" data-group="${g}">
           <td colspan="6"><span class="campaign-toggle">▶</span>${camp}</td>
         </tr>`;
-
-      const entries=Object.entries(pivot[camp]);
-      const best=entries.reduce((a,b)=>(b[1].revenue/b[1].spend)>(a[1].revenue/a[1].spend)?b:a);
-
-      entries.forEach(([p,c])=>{
+      const e=Object.entries(pivot[camp]);
+      const best=e.reduce((a,b)=>(b[1].revenue/b[1].spend)>(a[1].revenue/a[1].spend)?b:a);
+      e.forEach(([p,c])=>{
         const roi=c.revenue/c.spend;
-        cBody.innerHTML+=`
-          <tr class="hidden-row ${roiClass(roi)} ${p===best[0]?"best-placement":""}" data-parent="${group}">
+        cB.innerHTML+=`
+          <tr class="hidden-row ${roiClass(roi)} ${p===best[0]?"best-placement":""}" data-parent="${g}">
             <td></td><td>${p}${p===best[0]?" ⭐":""}</td>
             <td>${c.spend.toFixed(0)}</td>
             <td>${c.revenue.toFixed(0)}</td>
@@ -145,16 +132,33 @@ function generatePlacement() {
       });
     });
 
-    document.querySelectorAll(".campaign-group").forEach(row=>{
-      row.onclick=()=>{
-        const g=row.dataset.group;
+    document.querySelectorAll(".campaign-group").forEach(r=>{
+      r.onclick=()=>{
+        const g=r.dataset.group;
         const rows=document.querySelectorAll(`[data-parent="${g}"]`);
-        const icon=row.querySelector(".campaign-toggle");
-        const collapsed=rows[0].classList.contains("hidden-row");
-        rows.forEach(r=>r.classList.toggle("hidden-row",!collapsed));
-        icon.textContent=collapsed?"▼":"▶";
+        const icon=r.querySelector(".campaign-toggle");
+        const c=rows[0].classList.contains("hidden-row");
+        rows.forEach(x=>x.classList.toggle("hidden-row",!c));
+        icon.textContent=c?"▼":"▶";
       };
     });
   };
   reader.readAsText(file);
+}
+
+/* UI CONTROLS */
+function expandAllCampaigns() {
+  document.querySelectorAll(".campaign-group").forEach(r=>{
+    const g=r.dataset.group;
+    document.querySelectorAll(`[data-parent="${g}"]`).forEach(x=>x.classList.remove("hidden-row"));
+    r.querySelector(".campaign-toggle").textContent="▼";
+  });
+}
+
+function collapseAllCampaigns() {
+  document.querySelectorAll(".campaign-group").forEach(r=>{
+    const g=r.dataset.group;
+    document.querySelectorAll(`[data-parent="${g}"]`).forEach(x=>x.classList.add("hidden-row"));
+    r.querySelector(".campaign-toggle").textContent="▶";
+  });
 }
