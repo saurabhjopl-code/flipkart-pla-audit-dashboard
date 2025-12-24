@@ -1,13 +1,10 @@
 body {
   font-family: Arial, sans-serif;
   background: #f4f6f8;
-  margin: 0;
   padding: 20px;
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
   background: #fff;
   padding: 15px;
   border-radius: 8px;
@@ -21,14 +18,14 @@ body {
   padding: 10px 16px;
   border: none;
   background: #ddd;
-  cursor: pointer;
   margin-right: 5px;
+  cursor: pointer;
   border-radius: 4px;
 }
 
 .tab-btn.active {
   background: #007bff;
-  color: #fff;
+  color: white;
 }
 
 .tab-content {
@@ -42,11 +39,11 @@ body {
 .kpis {
   display: flex;
   gap: 15px;
-  margin-bottom: 15px;
+  margin: 15px 0;
 }
 
 .kpi {
-  background: #fff;
+  background: white;
   padding: 10px;
   border-radius: 6px;
   min-width: 120px;
@@ -56,10 +53,9 @@ body {
 
 table {
   width: 100%;
-  background: #fff;
+  background: white;
   border-collapse: collapse;
-  border-radius: 6px;
-  overflow: hidden;
+  margin-top: 10px;
 }
 
 th, td {
@@ -67,13 +63,13 @@ th, td {
   border-bottom: 1px solid #eee;
 }
 
-.red { background: #ffe6e6; }
-.orange { background: #fff4e0; }
-.green { background: #e6ffef; }
+.error {
+  color: red;
+  margin-top: 10px;
+}
 
 .footer {
   margin-top: 40px;
   text-align: center;
   font-size: 13px;
-  color: #555;
 }
