@@ -23,8 +23,6 @@
   <input type="file" id="campaignFile" accept=".csv">
   <button onclick="generateCampaign()">Generate Report</button>
 
-  <div id="campaignError" class="error"></div>
-
   <div id="campaignKpi" class="kpis"></div>
 
   <table id="campaignTable">
@@ -49,8 +47,6 @@
   <input type="file" id="placementFile" accept=".csv">
   <button onclick="generatePlacement()">Generate Report</button>
 
-  <div id="placementError" class="error"></div>
-
   <h4>Overall Placement Performance</h4>
   <table id="placementOverallTable">
     <thead>
@@ -74,7 +70,7 @@
   <table id="placementCampaignTable">
     <thead>
       <tr>
-        <th>Campaign Name</th>
+        <th>Campaign</th>
         <th>Placement Type</th>
         <th>Spend (₹)</th>
         <th>Revenue (₹)</th>
