@@ -1,5 +1,3 @@
-document.getElementById("fileInput").addEventListener("change", handleFiles);
-
 /* ================= TAB SWITCH ================= */
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -10,17 +8,7 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
   });
 });
 
-/* ================= FILE HANDLER ================= */
-function handleFiles(e) {
-  const files = Array.from(e.target.files);
-  files.forEach(file => {
-    const reader = new FileReader();
-    reader.onload = () => routeFile(reader.result);
-    reader.readAsText(file);
-  });
-}
-
-/* ================= ROBUST CSV PARSER ================= */
+/* ================= CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -32,18 +20,14 @@ function parseCSV(text) {
     const n = text[i + 1];
 
     if (c === '"' && inQuotes && n === '"') {
-      current += '"';
-      i++;
+      current += '"'; i++;
     } else if (c === '"') {
       inQuotes = !inQuotes;
     } else if (c === "," && !inQuotes) {
-      row.push(current.trim());
-      current = "";
+      row.push(current.trim()); current = "";
     } else if (c === "\n" && !inQuotes) {
-      row.push(current.trim());
-      rows.push(row);
-      row = [];
-      current = "";
+      row.push(current.trim()); rows.push(row);
+      row = []; current = "";
     } else {
       current += c;
     }
@@ -54,142 +38,131 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= HEADER NORMALIZATION ================= */
-function normalize(h) {
-  return h
-    .toLowerCase()
-    .replace(/\ufeff/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
+/* ================= CAMPAIGN ================= */
+function generateCampaign() {
+  const file = document.getElementById("campaignFile").files[0];
+  const errorBox = document.getElementById("campaignError");
+  errorBox.innerText = "";
 
-/* ================= FILE ROUTER ================= */
-function routeFile(csvText) {
-  const data = parseCSV(csvText);
-  const rawHeaders = data[0];
-  const headers = rawHeaders.map(h => normalize(h));
+  if (!file) return;
 
-  const isCampaign =
-    headers.includes("campaignname") &&
-    headers.includes("adspend") &&
-    headers.includes("totalrevenuers");
+  const reader = new FileReader();
+  reader.onload = () => {
+    const data = parseCSV(reader.result);
+    const headers = data[0];
 
-  const isPlacement =
-    headers.includes("placement") &&
-    headers.includes("campaignname");
+    const h = name => headers.indexOf(name);
 
-  if (isCampaign) {
-    processCampaign(data, headers);
-  }
-
-  if (isPlacement) {
-    processPlacement(data, headers);
-  }
-}
-
-/* ================= CAMPAIGN PERFORMANCE ================= */
-function processCampaign(data, headers) {
-  const rows = data.slice(1);
-
-  const IDX = {
-    CAMPAIGN: headers.indexOf("campaignname"),
-    SPEND: headers.indexOf("adspend"),
-    UNITS: headers.indexOf("totalconvertedunits"),
-    REVENUE: headers.indexOf("totalrevenuers")
-  };
-
-  let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
-  const campaigns = {};
-
-  rows.forEach(r => {
-    const name = r[IDX.CAMPAIGN];
-    if (!name) return;
-
-    const spend = parseFloat(r[IDX.SPEND]) || 0;
-    const units = parseFloat(r[IDX.UNITS]) || 0;
-    const revenue = parseFloat(r[IDX.REVENUE]) || 0;
-
-    totalSpend += spend;
-    totalRevenue += revenue;
-    totalUnits += units;
-
-    if (!campaigns[name]) {
-      campaigns[name] = { spend: 0, revenue: 0, units: 0 };
+    if (
+      h("Campaign Name") === -1 ||
+      h("Ad Spend") === -1 ||
+      h("Total Revenue (Rs.)") === -1 ||
+      h("Total Converted Units") === -1
+    ) {
+      errorBox.innerText = "Invalid Campaign Performance CSV format.";
+      return;
     }
 
-    campaigns[name].spend += spend;
-    campaigns[name].revenue += revenue;
-    campaigns[name].units += units;
-  });
+    const rows = data.slice(1);
+    const map = {};
+    let spend = 0, revenue = 0, units = 0;
 
-  // KPI
-  document.getElementById("campaignKpi").innerHTML = `
-    <div class="kpi">Spend<br>₹${totalSpend.toFixed(0)}</div>
-    <div class="kpi">Revenue<br>₹${totalRevenue.toFixed(0)}</div>
-    <div class="kpi">ROI<br>${totalSpend ? (totalRevenue / totalSpend).toFixed(2) : "∞"}</div>
-    <div class="kpi">Units<br>${totalUnits}</div>
-  `;
+    rows.forEach(r => {
+      const name = r[h("Campaign Name")];
+      if (!name) return;
 
-  // TABLE + FLAGS
-  const tbody = document.querySelector("#campaignTable tbody");
-  tbody.innerHTML = "";
+      const s = +r[h("Ad Spend")] || 0;
+      const rev = +r[h("Total Revenue (Rs.)")] || 0;
+      const u = +r[h("Total Converted Units")] || 0;
 
-  Object.entries(campaigns)
-    .sort((a, b) => b[1].spend - a[1].spend)
-    .forEach(([name, c]) => {
-      const roi = c.spend ? c.revenue / c.spend : Infinity;
+      spend += s; revenue += rev; units += u;
 
-      let flag;
-      if (roi < 3) flag = "🔴 Loss / Critical";
-      else if (roi <= 5) flag = "🟠 Needs Optimization";
-      else flag = "🟢 Scale Candidate";
+      if (!map[name]) map[name] = { spend: 0, revenue: 0, units: 0 };
+      map[name].spend += s;
+      map[name].revenue += rev;
+      map[name].units += u;
+    });
+
+    document.getElementById("campaignKpi").innerHTML = `
+      <div class="kpi">Spend<br>₹${spend.toFixed(0)}</div>
+      <div class="kpi">Revenue<br>₹${revenue.toFixed(0)}</div>
+      <div class="kpi">ROI<br>${spend ? (revenue / spend).toFixed(2) : "∞"}</div>
+      <div class="kpi">Units<br>${units}</div>
+    `;
+
+    const tbody = document.querySelector("#campaignTable tbody");
+    tbody.innerHTML = "";
+
+    Object.entries(map)
+      .sort((a, b) => b[1].spend - a[1].spend)
+      .forEach(([name, c]) => {
+        const roi = c.spend ? c.revenue / c.spend : Infinity;
+        const flag =
+          roi < 3 ? "🔴 Loss" :
+          roi <= 5 ? "🟠 Optimize" : "🟢 Scale";
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${name}</td>
+            <td>${c.spend.toFixed(0)}</td>
+            <td>${c.revenue.toFixed(0)}</td>
+            <td>${c.units}</td>
+            <td>${roi === Infinity ? "∞" : roi.toFixed(2)}</td>
+            <td>${flag}</td>
+          </tr>
+        `;
+      });
+  };
+  reader.readAsText(file);
+}
+
+/* ================= PLACEMENT ================= */
+function generatePlacement() {
+  const file = document.getElementById("placementFile").files[0];
+  const errorBox = document.getElementById("placementError");
+  errorBox.innerText = "";
+
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const data = parseCSV(reader.result);
+    const headers = data[0];
+    const h = name => headers.indexOf(name);
+
+    if (
+      h("Campaign Name") === -1 ||
+      h("Placement") === -1 ||
+      h("Ad Spend") === -1 ||
+      h("Total Revenue (Rs.)") === -1 ||
+      h("Total Converted Units") === -1
+    ) {
+      errorBox.innerText = "Invalid Placement Performance CSV format.";
+      return;
+    }
+
+    const tbody = document.querySelector("#placementTable tbody");
+    tbody.innerHTML = "";
+
+    data.slice(1).forEach(r => {
+      if (!r[h("Placement")]) return;
+
+      const spend = +r[h("Ad Spend")] || 0;
+      const revenue = +r[h("Total Revenue (Rs.)")] || 0;
+      const units = +r[h("Total Converted Units")] || 0;
+      const roi = spend ? (revenue / spend).toFixed(2) : "∞";
 
       tbody.innerHTML += `
         <tr>
-          <td>${name}</td>
-          <td>${c.spend.toFixed(0)}</td>
-          <td>${c.revenue.toFixed(0)}</td>
-          <td>${c.units}</td>
-          <td>${roi === Infinity ? "∞" : roi.toFixed(2)}</td>
-          <td>${flag}</td>
+          <td>${r[h("Campaign Name")]}</td>
+          <td>${r[h("Placement")]}</td>
+          <td>${spend.toFixed(0)}</td>
+          <td>${revenue.toFixed(0)}</td>
+          <td>${units}</td>
+          <td>${roi}</td>
         </tr>
       `;
     });
-}
-
-/* ================= PLACEMENT PERFORMANCE ================= */
-function processPlacement(data, headers) {
-  const rows = data.slice(1);
-
-  const IDX = {
-    CAMPAIGN: headers.indexOf("campaignname"),
-    PLACEMENT: headers.indexOf("placement"),
-    SPEND: headers.indexOf("adspend"),
-    UNITS: headers.indexOf("totalconvertedunits"),
-    REVENUE: headers.indexOf("totalrevenuers")
   };
-
-  const tbody = document.querySelector("#placementTable tbody");
-  tbody.innerHTML = "";
-
-  rows.forEach(r => {
-    const placement = r[IDX.PLACEMENT];
-    if (!placement) return;
-
-    const spend = parseFloat(r[IDX.SPEND]) || 0;
-    const revenue = parseFloat(r[IDX.REVENUE]) || 0;
-    const units = parseFloat(r[IDX.UNITS]) || 0;
-
-    const roi = spend ? (revenue / spend).toFixed(2) : "∞";
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${r[IDX.CAMPAIGN]}</td>
-        <td>${placement}</td>
-        <td>${spend.toFixed(0)}</td>
-        <td>${revenue.toFixed(0)}</td>
-        <td>${units}</td>
-        <td>${roi}</td>
-      </tr>
-    `;
-  });
+  reader.readAsText(file);
 }
