@@ -1,132 +1,204 @@
+/* ================= BASE ================= */
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
   background: #f4f6f8;
   padding: 20px;
-  color: #222;
+  color: #1f2937;
 }
 
+/* ================= HEADER ================= */
 .header {
-  background: #fff;
-  padding: 16px;
-  border-radius: 10px;
+  background: #ffffff;
+  padding: 18px 20px;
+  border-radius: 12px;
 }
 
-.tabs { margin: 20px 0; }
+/* ================= TABS ================= */
+.tabs {
+  margin: 22px 0;
+}
 
 .tab-btn {
-  padding: 10px 18px;
+  padding: 10px 20px;
   border: none;
-  background: #e0e0e0;
+  background: #e5e7eb;
   margin-right: 6px;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 600;
+  color: #374151;
 }
 
 .tab-btn.active {
-  background: #007bff;
-  color: white;
+  background: #2563eb;
+  color: #ffffff;
 }
 
+/* ================= CONTENT ================= */
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
+/* ===================================================== */
+/* ================= DAILY REPORT KPIs ================= */
+/* ===================================================== */
+
 .kpis {
-  display: flex;
-  gap: 15px;
-  margin: 14px 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 18px;
+  margin: 18px 0 20px;
 }
 
 .kpi {
-  background: #fff;
-  padding: 14px;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+  background: linear-gradient(180deg, #ffffff, #f9fafb);
+  border-radius: 14px;
+  padding: 18px 16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
   text-align: center;
-  min-width: 130px;
-  font-weight: bold;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* ================= TABLE ================= */
+.kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+}
+
+.kpi div:first-child {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.kpi div:last-child {
+  font-size: 22px;
+  font-weight: 800;
+  color: #111827;
+}
+
+/* ================= TABLE BASE ================= */
 table {
   width: 100%;
-  background: #fff;
+  background: #ffffff;
   margin-top: 14px;
-  border-radius: 10px;
+  border-radius: 14px;
   border-collapse: separate;
   border-spacing: 0;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.06);
   font-size: 13px;
 }
 
+/* ================= TABLE HEADER ================= */
 th {
-  background: #f8f9fb;
-  padding: 10px 12px;
+  background: #f9fafb;
+  padding: 12px 14px;
   text-transform: uppercase;
   font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: #374151;
   border-bottom: 2px solid #e5e7eb;
   position: sticky;
   top: 0;
 }
 
+/* ================= TABLE CELLS ================= */
 td {
-  padding: 8px 10px;
-  border-bottom: 1px solid #edf0f2;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: middle;
 }
 
+/* ================= ZEBRA & HOVER ================= */
 tbody tr:nth-child(even) { background: #fafafa; }
-tbody tr:hover { background: #f1f7ff; }
+tbody tr:hover { background: #f1f5ff; }
 
-/* ROI badges */
-.roi-green { background:#e6f7ee!important;color:#0f7a3d;font-weight:700; }
-.roi-orange{ background:#fff4d6!important;color:#b36b00;font-weight:700; }
-.roi-red   { background:#ffe5e5!important;color:#b30000;font-weight:700; }
+/* ===================================================== */
+/* ================= DAILY REPORT TABLE ================= */
+/* ===================================================== */
 
-/* ================= DAILY REPORT FIX ================= */
+/* Campaign Name */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
-  width: 30%;
+  width: 32%;
   text-align: left;
   white-space: normal;
+  word-break: break-word;
+  font-weight: 600;
 }
 
-#campaign table th:nth-child(n+2):nth-child(-n+5),
-#campaign table td:nth-child(n+2):nth-child(-n+5) {
+/* Numeric columns */
+#campaign table th:nth-child(2),
+#campaign table td:nth-child(2),
+#campaign table th:nth-child(3),
+#campaign table td:nth-child(3),
+#campaign table th:nth-child(4),
+#campaign table td:nth-child(4),
+#campaign table th:nth-child(5),
+#campaign table td:nth-child(5) {
   width: 13%;
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
-#campaign table th:last-child,
-#campaign table td:last-child {
-  width: 18%;
+/* Audit Status */
+#campaign table th:nth-child(6),
+#campaign table td:nth-child(6) {
+  width: 17%;
   text-align: center;
+  white-space: nowrap;
 }
 
+/* Audit Status alignment (dot + text) */
 #campaign table td:last-child {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-}
-
-/* ================= PLACEMENT TABLE FIX ================= */
-#placementOverallTable th:nth-child(1),
-#placementOverallTable td:nth-child(1) {
-  width: 38%;
-  text-align: left;
-}
-
-#placementOverallTable th:nth-child(n+2),
-#placementOverallTable td:nth-child(n+2) {
-  width: 15%;
-  text-align: right;
-}
-
-/* Campaign summary row */
-.campaign-group {
-  background: #eef3fa !important;
   font-weight: 700;
+}
+
+/* ROI emphasis */
+#campaign table td:nth-child(5) {
+  font-weight: 800;
+}
+
+/* ================= ROI BADGES ================= */
+.roi-green {
+  background: #e7f8ef !important;
+  color: #0f7a3d;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 800;
+}
+
+.roi-orange {
+  background: #fff4d6 !important;
+  color: #b36b00;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 800;
+}
+
+.roi-red {
+  background: #ffe5e5 !important;
+  color: #b30000;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 800;
+}
+
+/* ===================================================== */
+/* ================= PLACEMENT TABLE ==================== */
+/* ===================================================== */
+
+.campaign-group {
+  background: linear-gradient(90deg, #eef3fa, #f8fafc) !important;
+  font-weight: 800;
   cursor: pointer;
+  border-top: 2px solid #dbe3f0;
+  border-bottom: 2px solid #dbe3f0;
 }
 
 .campaign-toggle { margin-right: 8px; }
@@ -134,26 +206,51 @@ tbody tr:hover { background: #f1f7ff; }
 .hidden-row { display: none; }
 
 .best-placement {
-  background: rgba(40,167,69,0.12)!important;
-  border-left: 4px solid #28a745;
+  background: linear-gradient(
+    90deg,
+    rgba(40,167,69,0.15),
+    transparent
+  ) !important;
+  border-left: 4px solid #22c55e;
 }
 
+/* ================= ACTION BUTTONS ================= */
 .placement-actions {
-  margin: 12px 0;
+  margin: 14px 0;
 }
 
 .placement-actions button {
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 6px 16px;
+  border-radius: 999px;
   border: none;
   background: #eef2f7;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
   margin-right: 6px;
 }
 
+.placement-actions button:hover {
+  background: #dbe4f3;
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+  .kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+/* ================= FOOTER ================= */
 .footer {
   margin-top: 40px;
   text-align: center;
   font-size: 13px;
-  color: #555;
+  color: #6b7280;
 }
