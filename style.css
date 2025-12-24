@@ -5,101 +5,75 @@ body {
   padding: 20px;
 }
 
-header {
-  background: #ffffff;
-  padding: 15px 20px;
-  border-radius: 8px;
+.header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
 }
 
-h1 {
-  margin: 0;
-  font-size: 20px;
-}
-
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 15px;
+.tabs {
   margin: 20px 0;
 }
 
+.tab-btn {
+  padding: 10px 16px;
+  border: none;
+  background: #ddd;
+  cursor: pointer;
+  margin-right: 5px;
+  border-radius: 4px;
+}
+
+.tab-btn.active {
+  background: #007bff;
+  color: #fff;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.kpis {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
 .kpi {
-  background: #ffffff;
-  padding: 15px;
-  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 6px;
+  min-width: 120px;
   text-align: center;
   font-weight: bold;
 }
 
-.kpi span {
-  display: block;
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 5px;
-}
-
-.table-section {
-  background: #ffffff;
-  border-radius: 8px;
+table {
+  width: 100%;
+  background: #fff;
+  border-collapse: collapse;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-th {
-  background: #f1f3f5;
-  padding: 10px;
-  text-align: left;
-}
-
-td {
+th, td {
   padding: 10px;
   border-bottom: 1px solid #eee;
 }
 
-/* ROI COLOR LOGIC */
-.red {
-  background: #ffe6e6;
-}
+.red { background: #ffe6e6; }
+.orange { background: #fff4e0; }
+.green { background: #e6ffef; }
 
-.orange {
-  background: #fff4e0;
-}
-
-.green {
-  background: #e6ffef;
-}
-
-.app-footer {
+.footer {
   margin-top: 40px;
-  padding: 18px 12px;
-  background: #ffffff;
-  border-top: 1px solid #e0e0e0;
   text-align: center;
-  font-size: 14px;
-  color: #444;
-}
-
-.footer-content {
-  margin-bottom: 6px;
-}
-
-.footer-meta {
-  font-size: 12px;
-  color: #777;
-}
-
-.app-footer a {
-  color: #007bff;
-  text-decoration: none;
-}
-
-.app-footer a:hover {
-  text-decoration: underline;
+  font-size: 13px;
+  color: #555;
 }
