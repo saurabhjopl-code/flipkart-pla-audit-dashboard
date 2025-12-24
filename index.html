@@ -2,19 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Campaign Performance Audit</title>
+  <title>Flipkart PLA Audit Dashboard</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header>
-  <h1>Campaign Performance Audit</h1>
-  <input type="file" id="csvFile" accept=".csv">
+<header class="header">
+  <h2>Flipkart PLA Audit Dashboard</h2>
+  <input type="file" id="fileInput" multiple accept=".csv">
 </header>
 
-<section id="kpis" class="kpis"></section>
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="campaign">Campaign Performance</button>
+  <button class="tab-btn" data-tab="placement">Placement Performance</button>
+</div>
 
-<section class="table-section">
+<!-- CAMPAIGN TAB -->
+<section id="campaign" class="tab-content active">
+  <h3>Campaign Performance</h3>
+  <div id="campaignKpi" class="kpis"></div>
   <table id="campaignTable">
     <thead>
       <tr>
@@ -23,24 +30,38 @@
         <th>Revenue (₹)</th>
         <th>Units</th>
         <th>ROI</th>
-        <th>Audit Status</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </section>
 
+<!-- PLACEMENT TAB -->
+<section id="placement" class="tab-content">
+  <h3>Placement Performance</h3>
+  <table id="placementTable">
+    <thead>
+      <tr>
+        <th>Campaign Name</th>
+        <th>Placement</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<footer class="footer">
+  <strong>Made by Saurabh Mondal</strong><br>
+  Contact: +91-8200611920 | 
+  <a href="mailto:saurabhpmondal@gmail.com">saurabhpmondal@gmail.com</a><br>
+  © 2025 · Flipkart PLA Audit Dashboard · v1.0
+</footer>
+
 <script src="script.js"></script>
 </body>
-  <footer class="app-footer">
-  <div class="footer-content">
-    <strong>Made by Saurabh Mondal</strong><br>
-    Contact: +91-8200611920<br>
-    Email: <a href="mailto:saurabhpmondal@gmail.com">saurabhpmondal@gmail.com</a>
-  </div>
-
-  <div class="footer-meta">
-    © Saurabh Mondal - 2025 · Flipkart PLA Audit Dashboard · v1.0
-  </div>
-</footer>
 </html>
