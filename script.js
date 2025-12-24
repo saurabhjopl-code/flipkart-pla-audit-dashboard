@@ -9,7 +9,7 @@ document.getElementById("csvFile").addEventListener("change", e => {
   reader.readAsText(file);
 });
 
-/* ================= CSV PARSER ================= */
+/* ================= ROBUST CSV PARSER ================= */
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -40,18 +40,19 @@ function parseCSV(text) {
 
   row.push(current.trim());
   rows.push(row);
-
   return rows;
 }
 
 /* ================= MAIN PROCESS ================= */
 function processCSV(csvText) {
   const data = parseCSV(csvText);
-  const headers = data[0];
   const rows = data.slice(1);
 
-  let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
-  let totalViews = 0, totalClicks = 0;
+  let totalSpend = 0,
+      totalRevenue = 0,
+      totalUnits = 0,
+      totalViews = 0,
+      totalClicks = 0;
 
   const daily = {};
   const campaigns = {};
@@ -65,21 +66,22 @@ function processCSV(csvText) {
     const units = parseInt(c[6]) || 0;
     const revenue = parseFloat(c[7]) || 0;
 
-    if (!campaign || spend === 0) return;
+    // 🔑 IMPORTANT FIX: DO NOT SKIP ZERO-SPEND ROWS
+    if (!campaign) return;
 
-    /* totals */
+    /* ===== TOTALS ===== */
     totalSpend += spend;
     totalRevenue += revenue;
     totalUnits += units;
     totalViews += views;
     totalClicks += clicks;
 
-    /* daily */
+    /* ===== DAILY TREND ===== */
     if (!daily[date]) daily[date] = { spend: 0, revenue: 0 };
     daily[date].spend += spend;
     daily[date].revenue += revenue;
 
-    /* campaign consolidation */
+    /* ===== CAMPAIGN CONSOLIDATION ===== */
     if (!campaigns[campaign]) {
       campaigns[campaign] = {
         spend: 0,
@@ -99,9 +101,9 @@ function processCSV(csvText) {
   renderTrend(daily);
 }
 
-/* ================= KPI ================= */
+/* ================= KPI CARDS ================= */
 function renderKPIs(spend, revenue, units, clicks) {
-  const roi = revenue / spend;
+  const roi = spend > 0 ? revenue / spend : 0;
   const cls = roi < 3 ? "red" : roi <= 5 ? "orange" : "green";
 
   document.getElementById("kpis").innerHTML = `
@@ -126,19 +128,26 @@ function renderFunnel(views, clicks, units) {
     clicks ? ((units / clicks) * 100).toFixed(2) + "%" : "0%";
 }
 
-/* ================= TABLE ================= */
+/* ================= CAMPAIGN TABLE (NO DUPLICATES) ================= */
 function renderCampaignTable(campaigns) {
   const tbody = document.querySelector("#campaignTable tbody");
   tbody.innerHTML = "";
 
   Object.keys(campaigns).forEach(name => {
     const c = campaigns[name];
-    const roi = c.revenue / c.spend;
+    const roi = c.spend > 0 ? c.revenue / c.spend : Infinity;
 
     let flag, cls;
-    if (roi < 3) { flag = "🔴 Loss / Critical"; cls = "red"; }
-    else if (roi <= 5) { flag = "🟠 Needs Optimization"; cls = "orange"; }
-    else { flag = "🟢 Scale Candidate"; cls = "green"; }
+    if (roi < 3) {
+      flag = "🔴 Loss / Critical";
+      cls = "red";
+    } else if (roi <= 5) {
+      flag = "🟠 Needs Optimization";
+      cls = "orange";
+    } else {
+      flag = "🟢 Scale Candidate";
+      cls = "green";
+    }
 
     tbody.innerHTML += `
       <tr class="${cls}">
@@ -146,19 +155,21 @@ function renderCampaignTable(campaigns) {
         <td>${c.spend.toFixed(0)}</td>
         <td>${c.revenue.toFixed(0)}</td>
         <td>${c.units}</td>
-        <td>${roi.toFixed(2)}</td>
+        <td>${roi === Infinity ? "∞" : roi.toFixed(2)}</td>
         <td>${flag}</td>
       </tr>
     `;
   });
 }
 
-/* ================= TREND ================= */
+/* ================= DAILY TREND ================= */
 function renderTrend(data) {
   const labels = Object.keys(data).sort();
   const spend = labels.map(d => data[d].spend);
   const revenue = labels.map(d => data[d].revenue);
-  const roi = labels.map((d, i) => revenue[i] / spend[i]);
+  const roi = labels.map((d, i) =>
+    spend[i] > 0 ? revenue[i] / spend[i] : 0
+  );
 
   if (trendChart) trendChart.destroy();
 
@@ -174,7 +185,10 @@ function renderTrend(data) {
     },
     options: {
       scales: {
-        y1: { position: "right", grid: { drawOnChartArea: false } }
+        y1: {
+          position: "right",
+          grid: { drawOnChartArea: false }
+        }
       }
     }
   });
