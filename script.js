@@ -1,4 +1,6 @@
-document.getElementById("csvFile").addEventListener("change", function (e) {
+let trendChart;
+
+document.getElementById("csvFile").addEventListener("change", e => {
   const reader = new FileReader();
   reader.onload = () => processCSV(reader.result);
   reader.readAsText(e.target.files[0]);
@@ -6,77 +8,90 @@ document.getElementById("csvFile").addEventListener("change", function (e) {
 
 function processCSV(csv) {
   const lines = csv.trim().split("\n");
-  const headers = lines[0].split(",");
   const rows = lines.slice(1);
 
-  let totalSpend = 0;
-  let totalRevenue = 0;
-  let totalUnits = 0;
+  let totalSpend = 0, totalRevenue = 0, totalUnits = 0;
+  let totalViews = 0, totalClicks = 0;
 
-  const tbody = document.querySelector("#campaignTable tbody");
-  tbody.innerHTML = "";
+  const daily = {};            // for trend chart
+  const campaigns = {};        // 🔑 CONSOLIDATION OBJECT
 
-  rows.forEach(row => {
-    const c = row.split(",");
+  rows.forEach(r => {
+    const c = r.split(",");
 
-    if (!c[0]) return;
-
+    const date = c[2];
     const campaign = c[1];
-    const spend = parseFloat(c[3]) || 0;
-    const units = parseFloat(c[6]) || 0;
-    const revenue = parseFloat(c[7]) || 0;
+    const spend = +c[3] || 0;
+    const views = +c[4] || 0;
+    const clicks = +c[5] || 0;
+    const units = +c[6] || 0;
+    const revenue = +c[7] || 0;
 
-    if (spend === 0) return;
+    if (!campaign || spend === 0) return;
 
-    const roi = revenue / spend;
-
+    /* ========= OVERALL TOTALS ========= */
     totalSpend += spend;
     totalRevenue += revenue;
     totalUnits += units;
+    totalViews += views;
+    totalClicks += clicks;
 
-    let flag = "";
-    let rowClass = "";
+    /* ========= DAILY (TREND) ========= */
+    if (!daily[date]) daily[date] = { spend: 0, revenue: 0 };
+    daily[date].spend += spend;
+    daily[date].revenue += revenue;
 
-    // ✅ YOUR ROI LOGIC
-    if (roi < 3) {
-      flag = "🔴 Loss / Critical";
-      rowClass = "red";
-    } else if (roi >= 3 && roi <= 5) {
-      flag = "🟠 Needs Optimization";
-      rowClass = "orange";
-    } else {
-      flag = "🟢 Scale Candidate";
-      rowClass = "green";
+    /* ========= CAMPAIGN CONSOLIDATION ========= */
+    if (!campaigns[campaign]) {
+      campaigns[campaign] = {
+        spend: 0,
+        revenue: 0,
+        units: 0,
+        views: 0,
+        clicks: 0
+      };
     }
 
-    const tr = document.createElement("tr");
-    tr.className = rowClass;
-
-    tr.innerHTML = `
-      <td>${campaign}</td>
-      <td>${spend.toFixed(0)}</td>
-      <td>${revenue.toFixed(0)}</td>
-      <td>${units}</td>
-      <td>${roi.toFixed(2)}</td>
-      <td>${flag}</td>
-    `;
-
-    tbody.appendChild(tr);
+    campaigns[campaign].spend += spend;
+    campaigns[campaign].revenue += revenue;
+    campaigns[campaign].units += units;
+    campaigns[campaign].views += views;
+    campaigns[campaign].clicks += clicks;
   });
 
-  const overallROI = totalRevenue / totalSpend;
+  renderKPIs(totalSpend, totalRevenue, totalUnits, totalClicks);
+  renderFunnel(totalViews, totalClicks, totalUnits);
+  renderCampaignTable(campaigns);
+  renderTrend(daily);
+}
 
-  let overallClass =
-    overallROI < 3 ? "red" :
-    overallROI <= 5 ? "orange" : "green";
+/* ================= KPIs ================= */
+function renderKPIs(spend, revenue, units, clicks) {
+  const roi = revenue / spend;
+  const roiClass = roi < 3 ? "red" : roi <= 5 ? "orange" : "green";
 
   document.getElementById("kpis").innerHTML = `
-    <div class="kpi"><span>Total Spend</span>₹${totalSpend.toFixed(0)}</div>
-    <div class="kpi"><span>Total Revenue</span>₹${totalRevenue.toFixed(0)}</div>
-    <div class="kpi ${overallClass}">
-      <span>Overall ROI</span>${overallROI.toFixed(2)}
-    </div>
-    <div class="kpi"><span>Total Units</span>${totalUnits}</div>
-    <div class="kpi"><span>Campaigns</span>${rows.length}</div>
+    <div class="kpi">Spend<br>₹${spend.toFixed(0)}</div>
+    <div class="kpi">Revenue<br>₹${revenue.toFixed(0)}</div>
+    <div class="kpi ${roiClass}">ROI<br>${roi.toFixed(2)}</div>
+    <div class="kpi">Clicks<br>${clicks}</div>
+    <div class="kpi">Units<br>${units}</div>
   `;
 }
+
+/* ================= FUNNEL ================= */
+function renderFunnel(views, clicks, units) {
+  document.getElementById("views").innerText = views;
+  document.getElementById("clicks").innerText = clicks;
+  document.getElementById("units").innerText = units;
+
+  document.getElementById("ctr").innerText =
+    views ? ((clicks / views) * 100).toFixed(2) + "%" : "0%";
+
+  document.getElementById("conversion").innerText =
+    clicks ? ((units / clicks) * 100).toFixed(2) + "%" : "0%";
+}
+
+/* ================= CAMPAIGN TABLE (NO DUPLICATES) ================= */
+function renderCampaignTable(campaigns) {
+  const tbody = document.querySelector("#campaignTabl
