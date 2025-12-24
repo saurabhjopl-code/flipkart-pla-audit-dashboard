@@ -1,4 +1,3 @@
-/* ================= BASE ================= */
 body {
   font-family: Arial, sans-serif;
   background: #f4f6f8;
@@ -6,17 +5,13 @@ body {
   color: #222;
 }
 
-/* ================= HEADER ================= */
 .header {
-  background: #ffffff;
+  background: #fff;
   padding: 16px;
   border-radius: 10px;
 }
 
-/* ================= TABS ================= */
-.tabs {
-  margin: 20px 0;
-}
+.tabs { margin: 20px 0; }
 
 .tab-btn {
   padding: 10px 18px;
@@ -33,198 +28,116 @@ body {
   color: white;
 }
 
-/* ================= CONTENT ================= */
-.tab-content {
-  display: none;
-}
-.tab-content.active {
-  display: block;
-}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
-/* ================= KPI ================= */
 .kpis {
   display: flex;
   gap: 15px;
-  margin: 14px 0 10px;
+  margin: 14px 0;
 }
 
 .kpi {
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-  border-radius: 10px;
+  background: #fff;
   padding: 14px;
-  min-width: 130px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.06);
   text-align: center;
+  min-width: 130px;
   font-weight: bold;
 }
 
-/* ================= TABLE BASE ================= */
+/* ================= TABLE ================= */
 table {
   width: 100%;
-  background: #ffffff;
-  border-collapse: separate;
-  border-spacing: 0;
+  background: #fff;
   margin-top: 14px;
   border-radius: 10px;
-  overflow: hidden;
+  border-collapse: separate;
+  border-spacing: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
   font-size: 13px;
 }
 
-/* ================= TABLE HEADER ================= */
 th {
   background: #f8f9fb;
-  font-weight: 700;
-  text-transform: uppercase;
   padding: 10px 12px;
+  text-transform: uppercase;
+  font-weight: 700;
   border-bottom: 2px solid #e5e7eb;
   position: sticky;
   top: 0;
-  z-index: 1;
 }
 
-/* ================= TABLE CELLS ================= */
 td {
   padding: 8px 10px;
   border-bottom: 1px solid #edf0f2;
-  vertical-align: middle;
 }
 
-/* ================= ZEBRA & HOVER ================= */
-tbody tr:nth-child(even) {
-  background: #fafafa;
-}
+tbody tr:nth-child(even) { background: #fafafa; }
+tbody tr:hover { background: #f1f7ff; }
 
-tbody tr:hover {
-  background: #f1f7ff;
-}
+/* ROI badges */
+.roi-green { background:#e6f7ee!important;color:#0f7a3d;font-weight:700; }
+.roi-orange{ background:#fff4d6!important;color:#b36b00;font-weight:700; }
+.roi-red   { background:#ffe5e5!important;color:#b30000;font-weight:700; }
 
-/* ================= ROI BADGES ================= */
-td.roi-green,
-td.roi-orange,
-td.roi-red {
-  border-radius: 999px;
-  text-align: center;
-  width: fit-content;
-  padding: 4px 10px;
-  margin: auto;
-  font-weight: 700;
-}
-
-.roi-green {
-  background: #e6f7ee !important;
-  color: #0f7a3d;
-}
-
-.roi-orange {
-  background: #fff4d6 !important;
-  color: #b36b00;
-}
-
-.roi-red {
-  background: #ffe5e5 !important;
-  color: #b30000;
-}
-
-/* ========================================================= */
-/* ================= DAILY REPORT TABLE FIX ================= */
-/* ========================================================= */
-
-/* Campaign Name column – perfect fit */
+/* ================= DAILY REPORT FIX ================= */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
   width: 30%;
-  max-width: 30%;
   text-align: left;
   white-space: normal;
-  word-break: break-word;
 }
 
-/* Numeric columns */
-#campaign table th:nth-child(2),
-#campaign table td:nth-child(2),
-#campaign table th:nth-child(3),
-#campaign table td:nth-child(3),
-#campaign table th:nth-child(4),
-#campaign table td:nth-child(4),
-#campaign table th:nth-child(5),
-#campaign table td:nth-child(5) {
+#campaign table th:nth-child(n+2):nth-child(-n+5),
+#campaign table td:nth-child(n+2):nth-child(-n+5) {
   width: 13%;
   text-align: right;
 }
 
-/* Audit Status column */
-#campaign table th:nth-child(6),
-#campaign table td:nth-child(6) {
+#campaign table th:last-child,
+#campaign table td:last-child {
   width: 18%;
   text-align: center;
-  white-space: nowrap;
 }
 
-/* Audit Status content (dot + text) */
 #campaign table td:last-child {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-weight: 600;
 }
 
-/* Header alignment consistency */
-#campaign table th {
-  text-align: right;
-}
-
-#campaign table th:first-child {
+/* ================= PLACEMENT TABLE FIX ================= */
+#placementOverallTable th:nth-child(1),
+#placementOverallTable td:nth-child(1) {
+  width: 38%;
   text-align: left;
 }
 
-#campaign table th:last-child {
-  text-align: center;
-}
-
-/* ROI emphasis */
-#campaign table td:nth-child(5) {
-  font-weight: 700;
-}
-
-/* ========================================================= */
-/* ================= PLACEMENT TABLE ======================= */
-/* ========================================================= */
-
-td:nth-child(n+3) {
+#placementOverallTable th:nth-child(n+2),
+#placementOverallTable td:nth-child(n+2) {
+  width: 15%;
   text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
-/* Campaign group row */
+/* Campaign summary row */
 .campaign-group {
-  background: linear-gradient(90deg, #e8edf5, #f6f8fc) !important;
+  background: #eef3fa !important;
   font-weight: 700;
   cursor: pointer;
-  border-top: 2px solid #d0d7e2;
-  border-bottom: 2px solid #d0d7e2;
 }
 
-.campaign-toggle {
-  margin-right: 8px;
-}
+.campaign-toggle { margin-right: 8px; }
 
-.hidden-row {
-  display: none;
-}
+.hidden-row { display: none; }
 
-/* Best placement highlight */
 .best-placement {
-  background: linear-gradient(
-    90deg,
-    rgba(40,167,69,0.15),
-    transparent
-  ) !important;
+  background: rgba(40,167,69,0.12)!important;
   border-left: 4px solid #28a745;
 }
 
-/* ================= ACTION BUTTONS ================= */
 .placement-actions {
   margin: 12px 0;
 }
@@ -233,44 +146,14 @@ td:nth-child(n+3) {
   padding: 6px 14px;
   border-radius: 20px;
   border: none;
-  cursor: pointer;
-  font-size: 13px;
   background: #eef2f7;
-  margin-right: 8px;
-  font-weight: 600;
+  cursor: pointer;
+  margin-right: 6px;
 }
 
-.placement-actions button:hover {
-  background: #dbe4f3;
-}
-
-/* ================= MOBILE ================= */
-@media (max-width: 768px) {
-  table {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .kpis {
-    flex-wrap: wrap;
-  }
-
-  .kpi {
-    flex: 1 1 45%;
-  }
-}
-
-/* ================= FOOTER ================= */
 .footer {
   margin-top: 40px;
   text-align: center;
   font-size: 13px;
   color: #555;
-}
-
-/* ================= ERROR ================= */
-.error {
-  color: red;
-  margin-top: 10px;
 }
