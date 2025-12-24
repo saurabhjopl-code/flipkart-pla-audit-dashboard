@@ -97,10 +97,6 @@ tr.hidden-row { display: none !important; }
   color: #666;
 }
 
-.collapsible-body {
-  margin-bottom: 22px;
-}
-
 .footer {
   margin-top: 40px;
   text-align: center;
