@@ -126,13 +126,21 @@ td.roi-red {
   color: #b30000;
 }
 
+/* ========================================================= */
 /* ================= DAILY REPORT TABLE FIX ================= */
+/* ========================================================= */
+
+/* Campaign Name column – perfect fit */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
-  width: 36%;
+  width: 30%;
+  max-width: 30%;
   text-align: left;
+  white-space: normal;
+  word-break: break-word;
 }
 
+/* Numeric columns */
 #campaign table th:nth-child(2),
 #campaign table td:nth-child(2),
 #campaign table th:nth-child(3),
@@ -141,15 +149,25 @@ td.roi-red {
 #campaign table td:nth-child(4),
 #campaign table th:nth-child(5),
 #campaign table td:nth-child(5) {
-  width: 12%;
+  width: 13%;
   text-align: right;
 }
 
+/* Audit Status column */
 #campaign table th:nth-child(6),
 #campaign table td:nth-child(6) {
-  width: 16%;
+  width: 18%;
   text-align: center;
   white-space: nowrap;
+}
+
+/* Audit Status content (dot + text) */
+#campaign table td:last-child {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
 /* Header alignment consistency */
@@ -165,26 +183,21 @@ td.roi-red {
   text-align: center;
 }
 
-/* Audit status alignment */
-#campaign table td:last-child {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-
 /* ROI emphasis */
 #campaign table td:nth-child(5) {
   font-weight: 700;
 }
 
-/* ================= PLACEMENT TABLE ================= */
+/* ========================================================= */
+/* ================= PLACEMENT TABLE ======================= */
+/* ========================================================= */
+
 td:nth-child(n+3) {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-/* ================= CAMPAIGN GROUP ================= */
+/* Campaign group row */
 .campaign-group {
   background: linear-gradient(90deg, #e8edf5, #f6f8fc) !important;
   font-weight: 700;
@@ -201,7 +214,7 @@ td:nth-child(n+3) {
   display: none;
 }
 
-/* ================= BEST PLACEMENT ================= */
+/* Best placement highlight */
 .best-placement {
   background: linear-gradient(
     90deg,
