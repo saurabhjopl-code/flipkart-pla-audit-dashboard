@@ -35,18 +35,22 @@ body {
 }
 
 /* ================= CONTENT ================= */
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-content {
+  display: none;
+}
+.tab-content.active {
+  display: block;
+}
 
 /* ===================================================== */
-/* ================= DAILY REPORT KPIs ================= */
+/* ================= DAILY REPORT KPI ================== */
 /* ===================================================== */
 
 .kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(160px, 1fr));
   gap: 18px;
-  margin: 18px 0 20px;
+  margin: 18px 0 22px;
 }
 
 .kpi {
@@ -87,6 +91,7 @@ table {
   border-spacing: 0;
   box-shadow: 0 6px 20px rgba(0,0,0,0.06);
   font-size: 13px;
+  overflow: hidden;
 }
 
 /* ================= TABLE HEADER ================= */
@@ -101,6 +106,7 @@ th {
   border-bottom: 2px solid #e5e7eb;
   position: sticky;
   top: 0;
+  z-index: 2;
 }
 
 /* ================= TABLE CELLS ================= */
@@ -111,14 +117,19 @@ td {
 }
 
 /* ================= ZEBRA & HOVER ================= */
-tbody tr:nth-child(even) { background: #fafafa; }
-tbody tr:hover { background: #f1f5ff; }
+tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+tbody tr:hover {
+  background: #f1f5ff;
+}
 
 /* ===================================================== */
 /* ================= DAILY REPORT TABLE ================= */
 /* ===================================================== */
 
-/* Campaign Name */
+/* Campaign Name column */
 #campaign table th:nth-child(1),
 #campaign table td:nth-child(1) {
   width: 32%;
@@ -150,7 +161,7 @@ tbody tr:hover { background: #f1f5ff; }
   white-space: nowrap;
 }
 
-/* Audit Status alignment (dot + text) */
+/* Audit Status alignment */
 #campaign table td:last-child {
   display: inline-flex;
   align-items: center;
@@ -162,6 +173,35 @@ tbody tr:hover { background: #f1f5ff; }
 /* ROI emphasis */
 #campaign table td:nth-child(5) {
   font-weight: 800;
+}
+
+/* ===================================================== */
+/* ========== STICKY CAMPAIGN NAME COLUMN =============== */
+/* ===================================================== */
+
+#campaign table th:nth-child(1),
+#campaign table td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #ffffff;
+}
+
+#campaign table th:nth-child(1) {
+  background: #f9fafb;
+  z-index: 4;
+}
+
+/* Divider shadow */
+#campaign table th:nth-child(1)::after,
+#campaign table td:nth-child(1)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -1px;
+  width: 1px;
+  height: 100%;
+  background: #e5e7eb;
 }
 
 /* ================= ROI BADGES ================= */
@@ -201,9 +241,13 @@ tbody tr:hover { background: #f1f5ff; }
   border-bottom: 2px solid #dbe3f0;
 }
 
-.campaign-toggle { margin-right: 8px; }
+.campaign-toggle {
+  margin-right: 8px;
+}
 
-.hidden-row { display: none; }
+.hidden-row {
+  display: none;
+}
 
 .best-placement {
   background: linear-gradient(
