@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-/* ================= CSV PARSER ================= */
+/* =============== CSV PARSER =============== */
 function parseCSV(text) {
   const rows = [];
   let row = [], cur = "", q = false;
@@ -26,17 +26,13 @@ function parseCSV(text) {
   return rows;
 }
 
-/* ================= REPORT PERIOD ================= */
+/* =============== PERIOD EXTRACTION =============== */
 function extractReportPeriod(rows) {
   let start = "", end = "";
   rows.slice(0, 5).forEach(row => {
     const line = row.join(" ").trim();
-    if (/start\s*time/i.test(line)) {
-      start = line.replace(/.*start\s*time\s*:/i, "").trim();
-    }
-    if (/end\s*time/i.test(line)) {
-      end = line.replace(/.*end\s*time\s*:/i, "").trim();
-    }
+    if (/start\s*time/i.test(line)) start = line.replace(/.*:/, "").trim();
+    if (/end\s*time/i.test(line)) end = line.replace(/.*:/, "").trim();
   });
   return { start, end };
 }
@@ -49,9 +45,34 @@ function autoDetectHeader(rows, required) {
   throw "Header row not found";
 }
 
-const roiClass = r => r < 3 ? "roi-red" : r <= 5 ? "roi-orange" : "roi-green";
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  el.style.display = el.style.display === "none" ? "block" : "none";
+}
 
-/* ================= DAILY REPORT ================= */
+/* =============== WEEK RANGE =============== */
+function getWeekRange(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay() || 7;
+  const start = new Date(d);
+  start.setDate(d.getDate() - day + 1);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  const format = x =>
+    x.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+
+  const weekNo = Math.ceil(
+    (((start - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) / 7
+  );
+
+  return {
+    key: `W${weekNo}-${d.getFullYear()}`,
+    label: `Week ${weekNo} (${format(start)} – ${format(end)})`
+  };
+}
+
+/* =============== DAILY REPORT =============== */
 function generateCampaign() {
   const f = campaignFile.files[0];
   if (!f) return;
@@ -61,8 +82,7 @@ function generateCampaign() {
     const rows = parseCSV(r.result);
     const period = extractReportPeriod(rows);
     if (period.start || period.end) {
-      reportPeriod.innerHTML =
-        `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
+      reportPeriod.innerHTML = `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
     }
 
     const hRow = autoDetectHeader(rows, ["Campaign Name", "Ad Spend"]);
@@ -74,7 +94,7 @@ function generateCampaign() {
 
     data.forEach(x=>{
       const c=x[h("Campaign Name")];
-      const date=x[h("Date")];
+      const d=x[h("Date")];
       if(!c) return;
 
       const s=+x[h("Ad Spend")]||0;
@@ -86,23 +106,21 @@ function generateCampaign() {
       if(!map[c]) map[c]={s:0,r:0,u:0};
       map[c].s+=s; map[c].r+=r; map[c].u+=u;
 
-      if(date){
-        if(!dailyMap[date]) dailyMap[date]={s:0,r:0,u:0};
-        dailyMap[date].s+=s;
-        dailyMap[date].r+=r;
-        dailyMap[date].u+=u;
+      if(d){
+        if(!dailyMap[d]) dailyMap[d]={s:0,r:0,u:0};
+        dailyMap[d].s+=s; dailyMap[d].r+=r; dailyMap[d].u+=u;
       }
     });
 
-    campaignKpi.innerHTML=`
+    campaignKpi.innerHTML = `
       <div class="kpi">Spend<br>₹${S.toFixed(0)}</div>
       <div class="kpi">Revenue<br>₹${R.toFixed(0)}</div>
       <div class="kpi">ROI<br>${(R/S).toFixed(2)}</div>
       <div class="kpi">Units<br>${U}</div>
     `;
 
-    const tb=campaignTable.querySelector("tbody");
-    tb.innerHTML="";
+    const tb = campaignTable.querySelector("tbody");
+    tb.innerHTML = "";
     Object.entries(map).sort((a,b)=>b[1].s-a[1].s).forEach(([n,c])=>{
       const roi=c.r/c.s;
       const flag=roi<3?"🔴 Loss":roi<=5?"🟠 Optimize":"🟢 Scale";
@@ -135,32 +153,30 @@ function generateCampaign() {
     /* Weekly */
     const weeklyMap={};
     Object.keys(dailyMap).forEach(d=>{
-      const dt=new Date(d);
-      const w=`Week ${Math.ceil(dt.getDate()/7)} ${dt.getFullYear()}`;
-      if(!weeklyMap[w]) weeklyMap[w]={s:0,r:0,u:0};
-      weeklyMap[w].s+=dailyMap[d].s;
-      weeklyMap[w].r+=dailyMap[d].r;
-      weeklyMap[w].u+=dailyMap[d].u;
+      const wk=getWeekRange(d);
+      if(!weeklyMap[wk.key]) weeklyMap[wk.key]={label:wk.label,s:0,r:0,u:0};
+      weeklyMap[wk.key].s+=dailyMap[d].s;
+      weeklyMap[wk.key].r+=dailyMap[d].r;
+      weeklyMap[wk.key].u+=dailyMap[d].u;
     });
 
     const weeklyBody=document.querySelector("#weeklyTrendTable tbody");
     weeklyBody.innerHTML="";
-    Object.keys(weeklyMap).forEach(w=>{
-      const x=weeklyMap[w];
+    Object.values(weeklyMap).forEach(w=>{
       weeklyBody.innerHTML+=`
         <tr>
-          <td>${w}</td>
-          <td>${x.s.toFixed(0)}</td>
-          <td>${x.u}</td>
-          <td>${x.r.toFixed(0)}</td>
-          <td>${(x.r/x.s).toFixed(2)}</td>
+          <td>${w.label}</td>
+          <td>${w.s.toFixed(0)}</td>
+          <td>${w.u}</td>
+          <td>${w.r.toFixed(0)}</td>
+          <td>${(w.r/w.s).toFixed(2)}</td>
         </tr>`;
     });
   };
   r.readAsText(f);
 }
 
-/* ================= PLACEMENT REPORT ================= */
+/* =============== PLACEMENT REPORT =============== */
 function generatePlacement() {
-  /* unchanged – already working perfectly */
+  /* unchanged – already stable */
 }
