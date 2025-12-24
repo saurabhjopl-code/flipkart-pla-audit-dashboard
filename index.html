@@ -41,8 +41,11 @@
     <tbody></tbody>
   </table>
 
-  <!-- NEW: Day-to-Day -->
-  <h4>Day-to-Day Performance</h4>
+  <!-- Day-to-Day -->
+<h4 class="collapsible" onclick="toggleSection('dailySection')">
+  Day-to-Day Performance
+</h4>
+<div id="dailySection" class="collapsible-body">
   <table id="dailyTrendTable">
     <thead>
       <tr>
@@ -55,9 +58,13 @@
     </thead>
     <tbody></tbody>
   </table>
+</div>
 
-  <!-- NEW: Weekly -->
-  <h4>Weekly Performance</h4>
+<!-- Weekly -->
+<h4 class="collapsible" onclick="toggleSection('weeklySection')">
+  Weekly Performance
+</h4>
+<div id="weeklySection" class="collapsible-body">
   <table id="weeklyTrendTable">
     <thead>
       <tr>
@@ -70,6 +77,8 @@
     </thead>
     <tbody></tbody>
   </table>
+</div>
+
 </section>
 
 <!-- ================= PLACEMENT ================= -->
