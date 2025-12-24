@@ -286,3 +286,37 @@ tbody tr:hover { background: #f1f5ff; }
   font-size: 13px;
   color: #6b7280;
 }
+
+/* ===== PLACEMENT TABLE ALIGNMENT FIX ===== */
+
+#placementOverallTable th,
+#placementOverallTable td,
+#placementCampaignTable th,
+#placementCampaignTable td {
+  text-align: right;
+}
+
+#placementOverallTable th:first-child,
+#placementOverallTable td:first-child,
+#placementCampaignTable th:first-child,
+#placementCampaignTable td:first-child,
+#placementCampaignTable td:nth-child(2),
+#placementCampaignTable th:nth-child(2) {
+  text-align: left;
+}
+
+/* Ensure consistent column widths */
+#placementOverallTable th:nth-child(1),
+#placementOverallTable td:nth-child(1) { width: 38%; }
+
+#placementOverallTable th:nth-child(n+2),
+#placementOverallTable td:nth-child(n+2) { width: 15%; }
+
+#placementCampaignTable th:nth-child(1),
+#placementCampaignTable td:nth-child(1) { width: 32%; }
+
+#placementCampaignTable th:nth-child(2),
+#placementCampaignTable td:nth-child(2) { width: 26%; }
+
+#placementCampaignTable th:nth-child(n+3),
+#placementCampaignTable td:nth-child(n+3) { width: 10%; }
