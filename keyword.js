@@ -1,6 +1,6 @@
 /*************************************************
- * KEYWORD REPORTS — FINAL CLEAN VERSION
- * CORE TABS LOCKED
+ * KEYWORD REPORTS — FINAL LOCKED VERSION
+ * DOES NOT TOUCH CORE TABS
  *************************************************/
 
 function keywordSegmentByROI(roi) {
@@ -16,8 +16,8 @@ function num(v) {
 }
 
 function generateKeywordReport() {
-  const file = document.getElementById("keywordFile").files[0];
-  if (!file) {
+  const fileInput = document.getElementById("keywordFile");
+  if (!fileInput || !fileInput.files.length) {
     alert("Please upload Keyword CSV");
     return;
   }
@@ -26,12 +26,14 @@ function generateKeywordReport() {
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    /* Report Period */
+    /* ---------- Report Period ---------- */
     const period = extractReportPeriod(rows);
-    document.getElementById("keywordPeriod").innerHTML =
-      `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
+    const periodEl = document.getElementById("keywordPeriod");
+    if (periodEl) {
+      periodEl.innerHTML = `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
+    }
 
-    /* Fixed headers at row 3 */
+    /* ---------- Fixed Headers ---------- */
     const headers = rows[2];
     const data = rows.slice(3);
     const h = name => headers.indexOf(name);
@@ -45,7 +47,7 @@ function generateKeywordReport() {
       indirectRevenue: h("Indirect Revenue")
     };
 
-    const keywordMap = {};
+    const kw = {};
 
     data.forEach(r => {
       const keyword = r[idx.keyword];
@@ -57,65 +59,106 @@ function generateKeywordReport() {
       const revenue =
         num(r[idx.directRevenue]) + num(r[idx.indirectRevenue]);
 
-      if (!keywordMap[keyword]) {
-        keywordMap[keyword] = { spend: 0, revenue: 0, units: 0 };
+      if (!kw[keyword]) {
+        kw[keyword] = { spend: 0, revenue: 0, units: 0 };
       }
 
-      keywordMap[keyword].spend += spend;
-      keywordMap[keyword].revenue += revenue;
-      keywordMap[keyword].units += units;
+      kw[keyword].spend += spend;
+      kw[keyword].revenue += revenue;
+      kw[keyword].units += units;
     });
 
-    /* ========= Top Revenue Keywords ========= */
-    const topRevenueBody =
-      document.querySelector("#kwTopRevenue tbody");
-    topRevenueBody.innerHTML = "";
+    /* =====================================================
+       TOP REVENUE KEYWORDS
+    ===================================================== */
+    const topRevenueTable = document.getElementById("kwTopRevenue");
+    if (topRevenueTable) {
+      const body = topRevenueTable.querySelector("tbody");
+      body.innerHTML = "";
 
-    Object.entries(keywordMap)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .slice(0, 10)
-      .forEach(([k, v]) => {
+      Object.entries(kw)
+        .sort((a, b) => b[1].revenue - a[1].revenue)
+        .slice(0, 10)
+        .forEach(([k, v]) => {
+          const roi = v.spend ? v.revenue / v.spend : 0;
+          body.innerHTML += `
+            <tr>
+              <td>${k}</td>
+              <td>${v.spend.toFixed(0)}</td>
+              <td>${v.revenue.toFixed(0)}</td>
+              <td>${v.units}</td>
+              <td>${roi.toFixed(2)}</td>
+            </tr>
+          `;
+        });
+    }
+
+    /* =====================================================
+       TOP WASTE KEYWORDS
+    ===================================================== */
+    const topWasteTable = document.getElementById("kwTopWaste");
+    if (topWasteTable) {
+      const body = topWasteTable.querySelector("tbody");
+      body.innerHTML = "";
+
+      Object.entries(kw)
+        .filter(([_, v]) => v.spend > 0 && v.units === 0)
+        .sort((a, b) => b[1].spend - a[1].spend)
+        .slice(0, 10)
+        .forEach(([k, v]) => {
+          body.innerHTML += `
+            <tr>
+              <td>${k}</td>
+              <td>${v.spend.toFixed(0)}</td>
+              <td>${v.revenue.toFixed(0)}</td>
+              <td>${v.units}</td>
+              <td>0.00</td>
+            </tr>
+          `;
+        });
+    }
+
+    /* =====================================================
+       ROI-BASED KEYWORD SEGMENTATION (FIXED)
+    ===================================================== */
+    const kwSegmentTable = document.getElementById("kwSegment");
+    if (kwSegmentTable) {
+      const body = kwSegmentTable.querySelector("tbody");
+      body.innerHTML = "";
+
+      Object.entries(kw).forEach(([k, v]) => {
         const roi = v.spend ? v.revenue / v.spend : 0;
-        topRevenueBody.innerHTML += `
+        const [segment, action] = keywordSegmentByROI(roi);
+
+        body.innerHTML += `
           <tr>
             <td>${k}</td>
             <td>${v.spend.toFixed(0)}</td>
             <td>${v.revenue.toFixed(0)}</td>
             <td>${v.units}</td>
             <td>${roi.toFixed(2)}</td>
+            <td>${segment}</td>
+            <td>${action}</td>
           </tr>
         `;
       });
+    }
 
-    /* ========= Top Waste Keywords ========= */
-    const topWasteBody =
-      document.querySelector("#kwTopWaste tbody");
-    topWasteBody.innerHTML = "";
+    /* =====================================================
+       TREND TABLES — CORRECTLY DISABLED
+    ===================================================== */
+    const dayTable = document.getElementById("kwDay");
+    if (dayTable) {
+      dayTable.querySelector("tbody").innerHTML =
+        `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
+    }
 
-    Object.entries(keywordMap)
-      .filter(([_, v]) => v.spend > 0 && v.units === 0)
-      .sort((a, b) => b[1].spend - a[1].spend)
-      .slice(0, 10)
-      .forEach(([k, v]) => {
-        const roi = 0;
-        topWasteBody.innerHTML += `
-          <tr>
-            <td>${k}</td>
-            <td>${v.spend.toFixed(0)}</td>
-            <td>${v.revenue.toFixed(0)}</td>
-            <td>${v.units}</td>
-            <td>${roi.toFixed(2)}</td>
-          </tr>
-        `;
-      });
-
-    /* Trend tables intentionally disabled */
-    document.querySelector("#kwDay tbody").innerHTML =
-      `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
-
-    document.querySelector("#kwWeek tbody").innerHTML =
-      `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
+    const weekTable = document.getElementById("kwWeek");
+    if (weekTable) {
+      weekTable.querySelector("tbody").innerHTML =
+        `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
+    }
   };
 
-  reader.readAsText(file);
+  reader.readAsText(fileInput.files[0]);
 }
