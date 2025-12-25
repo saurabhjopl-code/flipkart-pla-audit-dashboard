@@ -416,4 +416,13 @@ function generateCampaignOrder() {
   };
   reader.readAsText(file);
 }
+function expandAllOrderAdgroups(){
+  document.querySelectorAll("#orderAdgroupTable .hidden-row")
+    .forEach(r=>r.classList.remove("hidden-row"));
+}
+function collapseAllOrderAdgroups(){
+  document.querySelectorAll("#orderAdgroupTable .hidden-row")
+    .forEach(r=>r.classList.add("hidden-row"));
+}
+
 
