@@ -249,3 +249,26 @@ tr.hidden-row { display: none !important; }
 #kwMatchType th:first-child {
   text-align: center;
 }
+.cor-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+#campaignOrderReport table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+#campaignOrderReport th,
+#campaignOrderReport td {
+  border: 1px solid #ddd;
+  padding: 6px;
+  font-size: 13px;
+}
+
+#campaignOrderReport th {
+  background: #f5f7fa;
+  text-align: left;
+}
