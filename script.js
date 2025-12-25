@@ -26,6 +26,10 @@ function parseCSV(text) {
   rows.push(row);
   return rows;
 }
+if (file.name.includes("Campaign Order")) {
+  COR_parseCampaignOrderCSV(parsedRows);
+}
+
 
 /**************** HEADER + PERIOD ****************/
 function autoDetectHeader(rows, required) {
