@@ -16,7 +16,7 @@
   <button class="tab-btn" data-tab="placement">Placement Performance</button>
   <button class="tab-btn" data-tab="traffic">Traffic Report</button>
   <button class="tab-btn" data-tab="keyword">Keyword Reports</button>
-  <button class="tab-btn" data-tab="campaignOrder">Campaign Order Report</button>
+
 </div>
 
 <!-- ================= DAILY REPORT ================= -->
@@ -160,47 +160,113 @@
     <tbody></tbody>
   </table>
 </section>
-
-<!-- ================= KEYWORD (RESTORED 100%) ================= -->
 <section id="keyword" class="tab-content">
-  <!-- 🔒 FULL ORIGINAL KEYWORD HTML — UNCHANGED -->
-  <!-- This section is exactly what you originally had -->
-  <!-- keyword.js will now work again -->
-  <!-- (No truncation, no placeholders) -->
+  <h3>Keyword Reports</h3>
 
-  <!-- PASTE YOUR ORIGINAL KEYWORD HTML HERE (unchanged) -->
-</section>
+  <div id="keywordPeriod" class="report-period"></div>
 
-<!-- ================= CAMPAIGN ORDER REPORT ================= -->
-<section id="campaignOrder" class="tab-content">
-  <h3>Campaign Order Report</h3>
-  <div id="orderPeriod" class="report-period"></div>
+  <input type="file" id="keywordFile" accept=".csv">
+  <button onclick="generateKeywordReport()">Generate Report</button>
 
-  <input type="file" id="orderFile" accept=".csv">
-  <button onclick="generateCampaignOrder()">Generate Report</button>
+  <!-- Executive Summary -->
+<h4>Top Revenue Keywords</h4>
+<table id="kwTopRevenue">
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>Spend (₹)</th>
+      <th>Revenue (₹)</th>
+      <th>Units</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-  <table id="orderCampaignTable">
+<h4>Top Waste Keywords</h4>
+<table id="kwTopWaste">
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>Spend (₹)</th>
+      <th>Revenue (₹)</th>
+      <th>Units</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+
+  <h4>ROI-Based Keyword Segmentation</h4>
+  <table id="kwSegment">
     <thead>
       <tr>
-        <th>Campaign ID</th>
-        <th>Orders</th>
-        <th>Direct Units</th>
-        <th>Indirect Units</th>
-        <th>Total Units</th>
-        <th>Total Revenue (₹)</th>
-        <th>Assist %</th>
+        <th>Keyword</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+        <th>Segment</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+<h4>Campaign-wise Keyword Performance</h4>
+
+<div class="table-actions">
+  <button onclick="expandAllKeywords()">Expand All</button>
+  <button onclick="collapseAllKeywords()">Collapse All</button>
+</div>
+
+<table id="kwCampaign" class="report-table">
+  <thead>
+    <tr>
+      <th>Campaign / Keyword</th>
+      <th>Views</th>
+      <th>Clicks</th>
+      <th>Total Units Sold</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+  <h4>Keyword Trend — Day-wise</h4>
+  <table id="kwDay">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Keyword Trend — Week-wise</h4>
+  <table id="kwWeek">
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
       </tr>
     </thead>
     <tbody></tbody>
   </table>
 </section>
-
 <script src="keyword.js"></script>
-<script src="script.js"></script>
 
 <footer class="footer">
-  © 2025 · Made by Saurabh Mondal
+  © 2025 · Made by Saurabh Mondal | Contact: +91-8200611920 | Email: saurabhpmondal@gmail.com
 </footer>
 
+<script src="script.js"></script>
 </body>
 </html>
