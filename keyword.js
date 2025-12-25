@@ -1,7 +1,27 @@
 /*************************************************
- * KEYWORD REPORTS (ISOLATED MODULE)
- * DOES NOT TOUCH CORE REPORTS
+ * KEYWORD REPORTS — FINAL SAFE VERSION
+ * CORE TABS UNTOUCHED
  *************************************************/
+
+function normalizeHeader(h) {
+  return h.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function getHeaderIndex(headers, possibleNames) {
+  const normHeaders = headers.map(normalizeHeader);
+  for (let name of possibleNames) {
+    const idx = normHeaders.indexOf(normalizeHeader(name));
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+function num(v) {
+  if (!v) return 0;
+  return Number(
+    v.toString().replace(/₹/g, "").replace(/,/g, "").trim()
+  ) || 0;
+}
 
 function keywordSegmentByROI(roi) {
   if (roi >= 7) return ["🟢 Scale", "Increase bids"];
@@ -21,16 +41,61 @@ function generateKeywordReport() {
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    /* Report period (row 1 & 2) */
+    // ---- Report Period ----
     const period = extractReportPeriod(rows);
     document.getElementById("keywordPeriod").innerHTML =
       `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    /* Header detection */
-    const headerRow = autoDetectHeader(rows, ["attributed_keyword", "Spend"]);
+    // ---- Header Row Detection ----
+    const headerRow = autoDetectHeader(rows, ["keyword", "spend"]);
     const headers = rows[headerRow];
+
+    // ---- Header Mapping (ROBUST) ----
+    const h = {
+      keyword: getHeaderIndex(headers, [
+        "attributed_keyword",
+        "attributed keyword",
+        "keyword"
+      ]),
+      searchTerm: getHeaderIndex(headers, [
+        "search term",
+        "customer search term"
+      ]),
+      spend: getHeaderIndex(headers, [
+        "spend",
+        "spendrs",
+        "spend₹"
+      ]),
+      directRev: getHeaderIndex(headers, [
+        "direct revenue",
+        "direct revenue rs",
+        "direct revenue (rs.)"
+      ]),
+      indirectRev: getHeaderIndex(headers, [
+        "indirect revenue",
+        "indirect revenue rs",
+        "indirect revenue (rs.)"
+      ]),
+      directUnits: getHeaderIndex(headers, [
+        "direct units",
+        "direct units sold"
+      ]),
+      indirectUnits: getHeaderIndex(headers, [
+        "indirect units",
+        "indirect units sold"
+      ]),
+      date: getHeaderIndex(headers, [
+        "date",
+        "impression date"
+      ])
+    };
+
+    if (h.keyword === -1 || h.spend === -1) {
+      alert("Keyword CSV headers not recognized. Please verify file.");
+      return;
+    }
+
     const data = rows.slice(headerRow + 1);
-    const h = name => headers.indexOf(name);
 
     const keywordMap = {};
     const dayMap = {};
@@ -40,17 +105,14 @@ function generateKeywordReport() {
     let totalRevenue = 0;
 
     data.forEach(r => {
-      const keyword = r[h("attributed_keyword")];
+      const keyword = r[h.keyword];
       if (!keyword) return;
 
-      const searchTerm = r[h("Search Term")] || "";
-      const date = r[h("Date")];
-
-      const spend = +r[h("Spend")] || 0;
-      const directRev = +r[h("Direct Revenue")] || 0;
-      const indirectRev = +r[h("Indirect Revenue")] || 0;
-      const directUnits = +r[h("Direct Units")] || 0;
-      const indirectUnits = +r[h("Indirect Units")] || 0;
+      const spend = num(r[h.spend]);
+      const directRev = num(r[h.directRev]);
+      const indirectRev = num(r[h.indirectRev]);
+      const directUnits = num(r[h.directUnits]);
+      const indirectUnits = num(r[h.indirectUnits]);
 
       const revenue = directRev + indirectRev;
       const units = directUnits + indirectUnits;
@@ -59,41 +121,37 @@ function generateKeywordReport() {
       totalRevenue += revenue;
 
       if (!keywordMap[keyword]) {
-        keywordMap[keyword] = {
-          searchTerm,
-          spend: 0,
-          revenue: 0,
-          units: 0
-        };
+        keywordMap[keyword] = { spend: 0, revenue: 0, units: 0 };
       }
 
       keywordMap[keyword].spend += spend;
       keywordMap[keyword].revenue += revenue;
       keywordMap[keyword].units += units;
 
+      const date = h.date !== -1 ? r[h.date] : null;
       if (date) {
         if (!dayMap[date]) dayMap[date] = { spend: 0, revenue: 0, units: 0 };
         dayMap[date].spend += spend;
         dayMap[date].revenue += revenue;
         dayMap[date].units += units;
 
-        const weekLabel = getWeekRange(date).label;
-        if (!weekMap[weekLabel]) weekMap[weekLabel] = { spend: 0, revenue: 0, units: 0 };
-        weekMap[weekLabel].spend += spend;
-        weekMap[weekLabel].revenue += revenue;
-        weekMap[weekLabel].units += units;
+        const week = getWeekRange(date).label;
+        if (!weekMap[week]) weekMap[week] = { spend: 0, revenue: 0, units: 0 };
+        weekMap[week].spend += spend;
+        weekMap[week].revenue += revenue;
+        weekMap[week].units += units;
       }
     });
 
-    /* Executive Summary */
+    // ---- Executive Summary ----
     document.getElementById("keywordExecutive").innerHTML = `
       <div class="kpi">Total Spend<br>₹${totalSpend.toFixed(0)}</div>
       <div class="kpi">Total Revenue<br>₹${totalRevenue.toFixed(0)}</div>
-      <div class="kpi">Overall ROI<br>${(totalRevenue / totalSpend).toFixed(2)}</div>
+      <div class="kpi">Overall ROI<br>${(totalRevenue / totalSpend || 0).toFixed(2)}</div>
       <div class="kpi">Keywords<br>${Object.keys(keywordMap).length}</div>
     `;
 
-    /* Efficiency Table */
+    // ---- Efficiency Table ----
     const effBody = document.querySelector("#kwEfficiency tbody");
     effBody.innerHTML = "";
     Object.entries(keywordMap).forEach(([k, v]) => {
@@ -101,7 +159,7 @@ function generateKeywordReport() {
       const [seg] = keywordSegmentByROI(roi);
       effBody.innerHTML += `
         <tr>
-          <td>${v.searchTerm}</td>
+          <td></td>
           <td>${k}</td>
           <td>${v.spend.toFixed(0)}</td>
           <td>${v.revenue.toFixed(0)}</td>
@@ -112,7 +170,7 @@ function generateKeywordReport() {
       `;
     });
 
-    /* ROI Segmentation */
+    // ---- ROI Segmentation ----
     const segBody = document.querySelector("#kwSegment tbody");
     segBody.innerHTML = "";
     Object.entries(keywordMap).forEach(([k, v]) => {
@@ -131,7 +189,7 @@ function generateKeywordReport() {
       `;
     });
 
-    /* Day-wise Trend */
+    // ---- Day-wise ----
     const dayBody = document.querySelector("#kwDay tbody");
     dayBody.innerHTML = "";
     Object.keys(dayMap)
@@ -144,12 +202,12 @@ function generateKeywordReport() {
             <td>${v.spend.toFixed(0)}</td>
             <td>${v.revenue.toFixed(0)}</td>
             <td>${v.units}</td>
-            <td>${(v.revenue / v.spend).toFixed(2)}</td>
+            <td>${(v.revenue / v.spend || 0).toFixed(2)}</td>
           </tr>
         `;
       });
 
-    /* Week-wise Trend */
+    // ---- Week-wise ----
     const weekBody = document.querySelector("#kwWeek tbody");
     weekBody.innerHTML = "";
     Object.entries(weekMap).forEach(([w, v]) => {
@@ -159,7 +217,7 @@ function generateKeywordReport() {
           <td>${v.spend.toFixed(0)}</td>
           <td>${v.revenue.toFixed(0)}</td>
           <td>${v.units}</td>
-          <td>${(v.revenue / v.spend).toFixed(2)}</td>
+          <td>${(v.revenue / v.spend || 0).toFixed(2)}</td>
         </tr>
       `;
     });
