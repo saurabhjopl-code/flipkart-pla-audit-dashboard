@@ -302,4 +302,56 @@ function generateTraffic() {
       }).join("");
   };
   reader.readAsText(file);
+
+}
+function generateCampaignOrder() {
+  const file = document.getElementById("orderFile").files[0];
+  if (!file) return alert("Upload Campaign Order CSV");
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const rows = parseCSV(reader.result);
+
+    const period = extractReportPeriod(rows);
+    orderPeriod.innerHTML =
+      `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
+
+    const headers = rows[2];
+    const data = rows.slice(3);
+    const h = n => headers.indexOf(n);
+
+    const map = {};
+
+    data.forEach(r => {
+      const c = r[h("Campaign ID")];
+      if (!c) return;
+
+      if (!map[c]) map[c] = { o: 0, d: 0, i: 0, r: 0 };
+
+      map[c].o++;
+      map[c].d += +r[h("Direct Units Sold")] || 0;
+      map[c].i += +r[h("Indirect Units Sold")] || 0;
+      map[c].r += +r[h("Total Revenue (Rs.)")] || 0;
+    });
+
+    const tbody = orderCampaignTable.querySelector("tbody");
+    tbody.innerHTML = "";
+
+    Object.entries(map).forEach(([c, v]) => {
+      const units = v.d + v.i;
+      const assist = units ? (v.i / units) * 100 : 0;
+
+      tbody.innerHTML += `
+        <tr>
+          <td>${c}</td>
+          <td>${v.o}</td>
+          <td>${v.d}</td>
+          <td>${v.i}</td>
+          <td>${units}</td>
+          <td>${v.r.toFixed(0)}</td>
+          <td>${assist.toFixed(1)}%</td>
+        </tr>`;
+    });
+  };
+  reader.readAsText(file);
 }
