@@ -16,7 +16,6 @@
   <button class="tab-btn" data-tab="placement">Placement Performance</button>
   <button class="tab-btn" data-tab="traffic">Traffic Report</button>
   <button class="tab-btn" data-tab="keyword">Keyword Reports</button>
-  <button class="tab-btn" data-tab="campaignOrder">Campaign Order Report</button>
 
 </div>
 
@@ -76,81 +75,6 @@
     </table>
   </div>
 </section>
-<!-- ================= CampaignOrder ================= -->
-  <section id="campaignOrder" class="tab-content">
-  <h3>Campaign Order Report</h3>
-  <div id="orderPeriod" class="report-period"></div>
-
-  <input type="file" id="orderFile" accept=".csv">
-  <button onclick="generateCampaignOrder()">Generate Report</button>
-
-  <table id="orderCampaignTable">
-    <thead>
-      <tr>
-        <th>Campaign ID</th>
-        <th>Orders</th>
-        <th>Direct Units</th>
-        <th>Indirect Units</th>
-        <th>Total Units</th>
-        <th>Total Revenue (₹)</th>
-        <th>Assist %</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-<h4>Campaign → AdGroup Performance</h4>
-
-<div class="placement-actions">
-  <button onclick="expandAllOrderAdgroups()">Expand All</button>
-  <button onclick="collapseAllOrderAdgroups()">Collapse All</button>
-</div>
-
-<table id="orderAdgroupTable">
-  <thead>
-    <tr>
-      <th>Campaign / AdGroup</th>
-      <th>Orders</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Total Units</th>
-      <th>Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<h4>Product / FSN Contribution</h4>
-
-<table id="orderProductTable">
-  <thead>
-    <tr>
-      <th>Product Name</th>
-      <th>FSN</th>
-      <th>Campaign Count</th>
-      <th>Orders</th>
-      <th>Total Units</th>
-      <th>Total Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<h4>Order Date Trend</h4>
-
-<table id="orderDateTable">
-  <thead>
-    <tr>
-      <th>Date</th>
-      <th>Orders</th>
-      <th>Total Units</th>
-      <th>Total Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-
-    
-</section>
-
 
 <!-- ================= PLACEMENT ================= -->
 <section id="placement" class="tab-content">
@@ -346,6 +270,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-
-
-
