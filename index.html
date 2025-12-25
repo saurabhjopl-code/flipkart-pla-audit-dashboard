@@ -1,168 +1,55 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Flipkart Audit Dashboard</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Ads & Sales Audit Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
+<header>Ads & Sales Audit Dashboard</header>
 
-<div class="header">
-  <h2>Flipkart Audit Dashboard</h2>
-</div>
+<main>
 
-<div class="tabs">
-  <button class="tab-btn active" data-tab="campaign">Daily Report</button>
-  <button class="tab-btn" data-tab="placement">Placement Performance</button>
-  <button class="tab-btn" data-tab="traffic">Traffic Report</button>
-</div>
-
-<!-- ================= DAILY REPORT ================= -->
-<section id="campaign" class="tab-content active">
-  <h3>Daily Report</h3>
-  <div id="reportPeriod" class="report-period"></div>
-
-  <input type="file" id="campaignFile" accept=".csv">
-  <button onclick="generateCampaign()">Generate Report</button>
-
-  <div id="campaignKpi" class="kpis"></div>
-
-  <table id="campaignTable">
-    <thead>
-      <tr>
-        <th>Campaign Name</th>
-        <th>Spend (₹)</th>
-        <th>Revenue (₹)</th>
-        <th>Units</th>
-        <th>ROI</th>
-        <th>Audit Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4 class="collapsible" onclick="toggleSection('dailySection')">Day-to-Day Performance</h4>
-  <div id="dailySection">
-    <table id="dailyTrendTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Spend (₹)</th>
-          <th>Units</th>
-          <th>Revenue (₹)</th>
-          <th>ROI</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+<section class="card upload-section">
+  <h2>📂 Upload Reports</h2>
+  <div class="upload-grid">
+    <div class="upload-card">
+      <h4>Campaign Order Report</h4>
+      <input type="file" id="campaignFile">
+    </div>
   </div>
-
-  <h4 class="collapsible" onclick="toggleSection('weeklySection')">Weekly Performance</h4>
-  <div id="weeklySection">
-    <table id="weeklyTrendTable">
-      <thead>
-        <tr>
-          <th>Week</th>
-          <th>Spend (₹)</th>
-          <th>Units</th>
-          <th>Revenue (₹)</th>
-          <th>ROI</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <div class="run-wrapper">
+    <button onclick="runAudit()">🚀 Run Audit</button>
   </div>
 </section>
 
-<!-- ================= PLACEMENT ================= -->
-<section id="placement" class="tab-content">
-  <h3>Placement Performance</h3>
-  <div id="reportPeriodPlacement" class="report-period"></div>
+<nav class="tabs">
+  <button class="active" onclick="tab(0)">Campaign Order Report</button>
+</nav>
 
-  <input type="file" id="placementFile" accept=".csv">
-  <button onclick="generatePlacement()">Generate Report</button>
+<section class="panel active" id="p0">
+  <div class="card">
+    <h3>Campaign × FSN Report</h3>
+    <div id="corMeta"></div>
+    <table id="campaignOrderTable"></table>
 
-  <h4>Overall Placement Performance</h4>
-  <table id="placementOverallTable">
-    <thead>
-      <tr>
-        <th>Placement Type</th>
-        <th>Spend (₹)</th>
-        <th>Revenue (₹)</th>
-        <th>Units</th>
-        <th>ROI</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <h3 style="margin-top:30px">Campaign × AdGroup Order Summary</h3>
 
-  <div class="placement-actions">
-    <button onclick="expandAllCampaigns()">Expand All</button>
-    <button onclick="collapseAllCampaigns()">Collapse All</button>
+    <div style="margin:10px 0">
+      <button onclick="expandAllCampaigns()">Expand All</button>
+      <button onclick="collapseAllCampaigns()">Collapse All</button>
+    </div>
+
+    <table id="campaignAdgroupTable"></table>
   </div>
-
-  <h4>Campaign-wise Placement Performance</h4>
-  <table id="placementCampaignTable">
-    <thead>
-      <tr>
-        <th>Campaign</th>
-        <th>Placement</th>
-        <th>Spend (₹)</th>
-        <th>Revenue (₹)</th>
-        <th>Units</th>
-        <th>ROI</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
 </section>
 
-<!-- ================= TRAFFIC ================= -->
-<section id="traffic" class="tab-content">
-  <h3>Traffic Report</h3>
-  <div id="trafficPeriod" class="report-period"></div>
+</main>
 
-  <input type="file" id="trafficFile" accept=".csv">
-  <button onclick="generateTraffic()">Generate Report</button>
-
-  <div id="trafficKpi" class="kpis"></div>
-
-  <h4>Day-wise Traffic Performance</h4>
-  <table id="trafficDailyTable">
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Impressions</th>
-        <th>Clicks</th>
-        <th>Revenue (₹)</th>
-        <th>Conversion Rate</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>SKU-wise Traffic Performance</h4>
-  <table id="trafficSkuTable">
-    <thead>
-      <tr>
-        <th>SKU ID</th>
-        <th>Product Title</th>
-        <th>Impressions</th>
-        <th>Clicks</th>
-        <th>Revenue (₹)</th>
-        <th>CTR</th>
-        <th>CVR</th>
-        <th>Audit Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</section>
-
-<footer class="footer">
-  © 2025 · Made by Saurabh Mondal
-</footer>
-
-<script src="script.js"></script>
+<script src="audit.js"></script>
+<script src="charts.js"></script>
 </body>
 </html>
