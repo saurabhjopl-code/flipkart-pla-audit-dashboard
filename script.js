@@ -370,138 +370,135 @@ function generateTraffic() {
 
 function generateCampaignOrder() {
   const file = document.getElementById("orderFile").files[0];
-  if (!file) {
-    alert("Upload Campaign Order CSV");
-    return;
-  }
+  if (!file) return alert("Upload Campaign Order CSV");
 
   const reader = new FileReader();
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    // 🔍 DEBUG (remove later if you want)
-    console.log("RAW ROWS:", rows.slice(0, 6));
-
-    // ===== Detect header row safely =====
-    const hRow = autoDetectHeader(rows, [
-      "Campaign",
-      "Order",
-      "Revenue",
-      "Units"
-    ]);
-
+    /* ===== Header Detection ===== */
+    const hRow = autoDetectHeader(rows, ["Campaign", "FSN", "Order"]);
     const headers = rows[hRow].map(h =>
       h.toLowerCase().replace(/\s+/g, "").replace(/[()₹]/g, "")
     );
-
     const data = rows.slice(hRow + 1);
-
-    // ===== Flexible index resolver =====
-    const col = name =>
-      headers.findIndex(h => h.includes(name));
+    const col = k => headers.findIndex(h => h.includes(k));
 
     const idx = {
       campaign: col("campaign"),
-      adgroup: col("adgroup"),
-      product: col("product"),
-      fsn: col("fsn"),
-      date: col("orderdate"),
+      advFsn: col("advertisedfsn"),
+      purFsn: col("purchasedfsn"),
       direct: col("directunit"),
       indirect: col("indirectunit"),
-      revenue: col("revenue")
+      revenue: col("revenue"),
+      date: col("orderdate")
     };
 
-    console.log("COLUMN INDEXES:", idx);
-
-    // 🚨 HARD FAIL if campaign column missing
-    if (idx.campaign === -1) {
-      alert("Campaign column not detected. Check CSV headers.");
-      return;
-    }
-
-    // ===== Period =====
+    /* ===== Period ===== */
     const period = extractReportPeriod(rows);
     orderPeriod.innerHTML =
       `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    const campMap = {}, adgMap = {}, prodMap = {}, dateMap = {};
+    const campMap = {};
+    const fsnMap = {};
+    const dateMap = {};
 
     data.forEach(r => {
       const c = r[idx.campaign];
       if (!c) return;
 
-      const ag = idx.adgroup !== -1 ? r[idx.adgroup] : "Unknown";
-      const p = idx.product !== -1 ? r[idx.product] : "Unknown";
-      const f = idx.fsn !== -1 ? r[idx.fsn] : "-";
-      const d = idx.date !== -1 ? r[idx.date] : "";
-
+      const adv = r[idx.advFsn] || "Unknown FSN";
+      const pur = idx.purFsn !== -1 ? r[idx.purFsn] : "-";
       const du = idx.direct !== -1 ? +r[idx.direct] || 0 : 0;
       const iu = idx.indirect !== -1 ? +r[idx.indirect] || 0 : 0;
+      const units = du + iu || 1;
       const rev = idx.revenue !== -1 ? +r[idx.revenue] || 0 : 0;
-      const units = du + iu;
+      const d = idx.date !== -1 ? r[idx.date] : "";
 
-      // Campaign
-      if (!campMap[c]) campMap[c] = { o:0,d:0,i:0,r:0 };
-      campMap[c].o++; campMap[c].d+=du; campMap[c].i+=iu; campMap[c].r+=rev;
+      /* Campaign Summary */
+      if (!campMap[c]) campMap[c] = { o:0,d:0,i:0,u:0,r:0, fsns:{} };
+      campMap[c].o++;
+      campMap[c].d += du;
+      campMap[c].i += iu;
+      campMap[c].u += units;
+      campMap[c].r += rev;
 
-      // AdGroup
-      if (!adgMap[c]) adgMap[c] = {};
-      if (!adgMap[c][ag]) adgMap[c][ag] = { o:0,u:0,r:0 };
-      adgMap[c][ag].o++; adgMap[c][ag].u+=units; adgMap[c][ag].r+=rev;
+      if (!campMap[c].fsns[adv])
+        campMap[c].fsns[adv] = { o:0,u:0,r:0 };
 
-      // Product / FSN
-      const key = p+"||"+f;
-      if (!prodMap[key])
-        prodMap[key] = { p,f,camps:new Set(),o:0,u:0,r:0 };
-      prodMap[key].camps.add(c);
-      prodMap[key].o++; prodMap[key].u+=units; prodMap[key].r+=rev;
+      campMap[c].fsns[adv].o++;
+      campMap[c].fsns[adv].u += units;
+      campMap[c].fsns[adv].r += rev;
 
-      // Date
+      /* FSN Contribution */
+      if (!fsnMap[adv])
+        fsnMap[adv] = { adv, pur, o:0,u:0,r:0 };
+      fsnMap[adv].o++;
+      fsnMap[adv].u += units;
+      fsnMap[adv].r += rev;
+
+      /* Date Trend */
       if (d) {
         if (!dateMap[d]) dateMap[d] = { o:0,u:0,r:0 };
-        dateMap[d].o++; dateMap[d].u+=units; dateMap[d].r+=rev;
+        dateMap[d].o++;
+        dateMap[d].u += units;
+        dateMap[d].r += rev;
       }
     });
 
-    // ===== Render Campaign Summary =====
-    const sumBody = orderCampaignTable.querySelector("tbody");
-    sumBody.innerHTML = "";
-    Object.entries(campMap).forEach(([c,v])=>{
-      const assist = v.d+v.i ? (v.i/(v.d+v.i))*100 : 0;
-      sumBody.innerHTML += `
-        <tr>
-          <td>${c}</td>
+    /* ===== Campaign → FSN Drilldown ===== */
+    const agBody = orderAdgroupTable.querySelector("tbody");
+    agBody.innerHTML = "";
+    let g = 0;
+
+    Object.entries(campMap).forEach(([c,v]) => {
+      const gid = "grp"+(g++);
+      agBody.innerHTML += `
+        <tr class="order-parent" data-group="${gid}">
+          <td><b>${c}</b></td>
           <td>${v.o}</td>
           <td>${v.d}</td>
           <td>${v.i}</td>
-          <td>${v.d+v.i}</td>
-          <td>${v.r.toFixed(0)}</td>
-          <td>${assist.toFixed(1)}%</td>
-        </tr>`;
-    });
-
-    // ===== Render Product / FSN =====
-    const pBody = orderProductTable.querySelector("tbody");
-    pBody.innerHTML = "";
-    Object.values(prodMap).forEach(v=>{
-      pBody.innerHTML += `
-        <tr>
-          <td>${v.p}</td>
-          <td>${v.f}</td>
-          <td>${v.camps.size}</td>
-          <td>${v.o}</td>
           <td>${v.u}</td>
           <td>${v.r.toFixed(0)}</td>
         </tr>`;
+
+      Object.entries(v.fsns).forEach(([f,x]) => {
+        agBody.innerHTML += `
+          <tr class="order-child-row" data-parent="${gid}">
+            <td style="padding-left:20px">${f}</td>
+            <td>${x.o}</td>
+            <td></td>
+            <td></td>
+            <td>${x.u}</td>
+            <td>${x.r.toFixed(0)}</td>
+          </tr>`;
+      });
     });
 
-    // ===== Render Date Trend =====
+    /* ===== Product / FSN Contribution ===== */
+    const pBody = orderProductTable.querySelector("tbody");
+    pBody.innerHTML = "";
+    Object.values(fsnMap)
+      .sort((a,b)=>b.r-a.r)
+      .forEach(v => {
+        pBody.innerHTML += `
+          <tr>
+            <td>${v.adv}</td>
+            <td>${v.pur}</td>
+            <td>${v.o}</td>
+            <td>${v.u}</td>
+            <td>${v.r.toFixed(0)}</td>
+          </tr>`;
+      });
+
+    /* ===== Order Date Trend ===== */
     const dBody = orderDateTable.querySelector("tbody");
     dBody.innerHTML = "";
     Object.keys(dateMap)
       .sort((a,b)=>new Date(a)-new Date(b))
-      .forEach(d=>{
-        const v=dateMap[d];
+      .forEach(d => {
+        const v = dateMap[d];
         dBody.innerHTML += `
           <tr>
             <td>${d}</td>
@@ -524,6 +521,7 @@ function collapseAllOrderAdgroups(){
   document.querySelectorAll("#orderAdgroupTable .hidden-row")
     .forEach(r=>r.classList.add("hidden-row"));
 }
+
 
 
 
