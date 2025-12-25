@@ -8,7 +8,7 @@ function num(v) {
   return Number(v.toString().replace(/₹|,/g, "").trim()) || 0;
 }
 
-/* ROI SEGMENTATION (LOCKED RULE) */
+/* ROI SEGMENTATION RULE (LOCKED) */
 function keywordSegmentByROI(roi) {
   if (roi >= 7) return ["🟢 Scale", "Increase bids"];
   if (roi >= 5) return ["🟠 Optimize", "Test"];
@@ -19,7 +19,6 @@ function keywordSegmentByROI(roi) {
 /* =====================================================
    MAIN ENTRY
 ===================================================== */
-
 function generateKeywordReport() {
   const file = document.getElementById("keywordFile").files[0];
   if (!file) {
@@ -39,7 +38,7 @@ function generateKeywordReport() {
         `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
     }
 
-    /* -------- Headers (Fixed Row 3) -------- */
+    /* -------- Headers (Row 3 fixed) -------- */
     const headers = rows[2];
     const data = rows.slice(3);
     const h = name => headers.indexOf(name);
@@ -59,7 +58,7 @@ function generateKeywordReport() {
     };
 
     /* =====================================================
-       KEYWORD LEVEL AGGREGATION
+       KEYWORD-LEVEL AGGREGATION
     ===================================================== */
     const kwMap = {};
 
@@ -134,28 +133,31 @@ function generateKeywordReport() {
 
     /* =====================================================
        ROI-BASED KEYWORD SEGMENTATION
+       🔥 SORTED BY SPEND (₹) DESC
     ===================================================== */
     const segTable = document.getElementById("kwSegment");
     if (segTable) {
       const body = segTable.querySelector("tbody");
       body.innerHTML = "";
 
-      Object.entries(kwMap).forEach(([k, v]) => {
-        const roi = v.spend ? v.revenue / v.spend : 0;
-        const [segment, action] = keywordSegmentByROI(roi);
+      Object.entries(kwMap)
+        .sort((a, b) => b[1].spend - a[1].spend)
+        .forEach(([k, v]) => {
+          const roi = v.spend ? v.revenue / v.spend : 0;
+          const [segment, action] = keywordSegmentByROI(roi);
 
-        body.innerHTML += `
-          <tr>
-            <td>${k}</td>
-            <td>${v.spend.toFixed(0)}</td>
-            <td>${v.revenue.toFixed(0)}</td>
-            <td>${v.units}</td>
-            <td>${roi.toFixed(2)}</td>
-            <td>${segment}</td>
-            <td>${action}</td>
-          </tr>
-        `;
-      });
+          body.innerHTML += `
+            <tr>
+              <td>${k}</td>
+              <td>${v.spend.toFixed(0)}</td>
+              <td>${v.revenue.toFixed(0)}</td>
+              <td>${v.units}</td>
+              <td>${roi.toFixed(2)}</td>
+              <td>${segment}</td>
+              <td>${action}</td>
+            </tr>
+          `;
+        });
     }
 
     /* =====================================================
@@ -169,7 +171,7 @@ function generateKeywordReport() {
     buildMatchTypeAnalysis(data, headers);
 
     /* =====================================================
-       KEYWORD → CAMPAIGN CONTRIBUTION
+       KEYWORD → CAMPAIGN CONTRIBUTION %
     ===================================================== */
     buildKeywordCampaignContribution(data, headers);
   };
@@ -178,9 +180,8 @@ function generateKeywordReport() {
 }
 
 /* =====================================================
-   CAMPAIGN-WISE KEYWORD TABLE (COLLAPSIBLE)
+   CAMPAIGN-WISE KEYWORD PERFORMANCE (COLLAPSIBLE)
 ===================================================== */
-
 function buildCampaignKeywordTable(rows, headers) {
   const h = name => headers.indexOf(name);
 
@@ -195,6 +196,7 @@ function buildCampaignKeywordTable(rows, headers) {
   };
 
   const map = {};
+
   rows.forEach(r => {
     const camp = r[idx.campaign];
     const kw = r[idx.keyword];
@@ -265,7 +267,6 @@ function collapseAllKeywords() {
 /* =====================================================
    MATCH TYPE ANALYSIS
 ===================================================== */
-
 function buildMatchTypeAnalysis(rows, headers) {
   const h = name => headers.indexOf(name);
 
@@ -334,7 +335,6 @@ function buildMatchTypeAnalysis(rows, headers) {
 /* =====================================================
    KEYWORD → CAMPAIGN CONTRIBUTION %
 ===================================================== */
-
 function buildKeywordCampaignContribution(rows, headers) {
   const h = name => headers.indexOf(name);
 
