@@ -1,4 +1,4 @@
-/**************** TAB SWITCH ****************/
+/******** TAB SWITCH ********/
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".tab-btn").forEach(btn => {
     btn.onclick = () => {
@@ -10,296 +10,93 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-/**************** CSV PARSER ****************/
-function parseCSV(text) {
-  const rows = [];
-  let row = [], cur = "", q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], n = text[i + 1];
-    if (c === '"' && q && n === '"') { cur += '"'; i++; }
-    else if (c === '"') q = !q;
-    else if (c === "," && !q) { row.push(cur.trim()); cur = ""; }
-    else if (c === "\n" && !q) { row.push(cur.trim()); rows.push(row); row = []; cur = ""; }
-    else cur += c;
+/******** CSV PARSER ********/
+function parseCSV(text){
+  return text.trim().split("\n").map(r=>r.split(",").map(x=>x.trim()));
+}
+
+/******** PERIOD ********/
+function extractReportPeriod(rows){
+  return {
+    start: rows[0].join(" ").replace(/.*:/,"").trim(),
+    end: rows[1].join(" ").replace(/.*:/,"").trim()
+  };
+}
+
+/******** HEADER ********/
+function autoDetectHeader(rows, keys){
+  for(let i=0;i<5;i++){
+    if(keys.every(k=>rows[i].includes(k))) return i;
   }
-  row.push(cur.trim());
-  rows.push(row);
-  return rows;
+  throw "Header not found";
 }
 
-/**************** HEADER + PERIOD ****************/
-function autoDetectHeader(rows, required) {
-  for (let i = 0; i < Math.min(10, rows.length); i++) {
-    const found = required.filter(h => rows[i].includes(h)).length;
-    if (found >= 2) return i;
-  }
-  throw new Error("Header not found");
+/******** ROI SEGMENT ********/
+function kwSegment(roi){
+  if(roi>=7) return ["🟢 Scale","Increase"];
+  if(roi>=5) return ["🟠 Optimize","Test"];
+  if(roi>=3) return ["🟡 Caution","Reduce"];
+  return ["🔴 Kill","Pause"];
 }
 
-function extractReportPeriod(rows) {
-  let start = "", end = "";
-  rows.slice(0, 5).forEach(r => {
-    const line = r.join(" ").trim();
-    if (/start\s*time/i.test(line)) start = line.replace(/.*start\s*time\s*:/i, "").trim();
-    if (/end\s*time/i.test(line)) end = line.replace(/.*end\s*time\s*:/i, "").trim();
-  });
-  return { start, end };
-}
+/******** KEYWORD REPORT ********/
+function generateKeywordReport(){
+  const f=keywordFile.files[0];
+  if(!f) return alert("Upload Keyword CSV");
 
-const roiClass = r => r < 3 ? "roi-red" : r <= 5 ? "roi-orange" : "roi-green";
+  const r=new FileReader();
+  r.onload=()=>{
+    const rows=parseCSV(r.result);
+    const period=extractReportPeriod(rows);
+    keywordPeriod.innerHTML=`Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-/**************** COLLAPSIBLES ****************/
-function toggleSection(id) {
-  const el = document.getElementById(id);
-  el.style.display = el.style.display === "none" ? "block" : "none";
-}
+    const hRow=autoDetectHeader(rows,["attributed_keyword","Spend"]);
+    const hds=rows[hRow];
+    const d=rows.slice(hRow+1);
+    const h=n=>hds.indexOf(n);
 
-/**************** WEEK RANGE ****************/
-function getWeekRange(dateStr) {
-  const d = new Date(dateStr);
-  const day = d.getDay() || 7;
-  const start = new Date(d);
-  start.setDate(d.getDate() - day + 1);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  const f = x => x.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  return { key: `${start}`, label: `Week (${f(start)} – ${f(end)})` };
-}
+    const kw={}, day={}, week={};
+    let TS=0,TR=0;
 
-/**************** DAILY REPORT ****************/
-function generateCampaign() {
-  const file = campaignFile.files[0];
-  if (!file) return alert("Upload Campaign CSV");
+    d.forEach(x=>{
+      const k=x[h("attributed_keyword")];
+      if(!k) return;
+      const date=x[h("Date")];
+      const s=+x[h("Spend")]||0;
+      const dr=+x[h("Direct Revenue")]||0;
+      const ir=+x[h("Indirect Revenue")]||0;
+      const du=+x[h("Direct Units")]||0;
+      const iu=+x[h("Indirect Units")]||0;
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const rows = parseCSV(reader.result);
-    const period = extractReportPeriod(rows);
-    if (period.start || period.end) {
-      reportPeriod.innerHTML = `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
-    }
+      const r=dr+ir, u=du+iu;
+      TS+=s; TR+=r;
 
-    const hRow = autoDetectHeader(rows, ["Campaign Name", "Ad Spend"]);
-    const headers = rows[hRow];
-    const data = rows.slice(hRow + 1);
-    const h = n => headers.indexOf(n);
+      if(!kw[k]) kw[k]={s:0,r:0,u:0};
+      kw[k].s+=s; kw[k].r+=r; kw[k].u+=u;
 
-    let S=0,R=0,U=0;
-    const cmap={}, daily={};
-
-    data.forEach(r=>{
-      const c=r[h("Campaign Name")];
-      const d=r[h("Date")];
-      if(!c) return;
-      const s=+r[h("Ad Spend")]||0;
-      const rV=+r[h("Total Revenue (Rs.)")]||0;
-      const u=+r[h("Total converted units")]||0;
-      S+=s;R+=rV;U+=u;
-
-      if(!cmap[c]) cmap[c]={s:0,r:0,u:0};
-      cmap[c].s+=s; cmap[c].r+=rV; cmap[c].u+=u;
-
-      if(d){
-        if(!daily[d]) daily[d]={s:0,r:0,u:0};
-        daily[d].s+=s; daily[d].r+=rV; daily[d].u+=u;
+      if(date){
+        if(!day[date]) day[date]={s:0,r:0,u:0};
+        day[date].s+=s; day[date].r+=r; day[date].u+=u;
       }
     });
 
-    campaignKpi.innerHTML = `
-      <div class="kpi">Spend<br>₹${S.toFixed(0)}</div>
-      <div class="kpi">Revenue<br>₹${R.toFixed(0)}</div>
-      <div class="kpi">ROI<br>${(R/S).toFixed(2)}</div>
-      <div class="kpi">Units<br>${U}</div>
+    keywordExecutive.innerHTML=`
+      <div class="kpi">Spend<br>₹${TS.toFixed(0)}</div>
+      <div class="kpi">Revenue<br>₹${TR.toFixed(0)}</div>
+      <div class="kpi">ROI<br>${(TR/TS).toFixed(2)}</div>
+      <div class="kpi">Keywords<br>${Object.keys(kw).length}</div>
     `;
 
-    const tb=campaignTable.querySelector("tbody");
-    tb.innerHTML="";
-    Object.entries(cmap).sort((a,b)=>b[1].s-a[1].s).forEach(([c,v])=>{
-      const roi=v.r/v.s;
-      const st=roi<3?"🔴 Loss":roi<=5?"🟠 Optimize":"🟢 Scale";
-      tb.innerHTML+=`
-        <tr><td>${c}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.r.toFixed(0)}</td><td>${v.u}</td>
-        <td>${roi.toFixed(2)}</td><td>${st}</td></tr>`;
-    });
-
-    const dBody=dailyTrendTable.querySelector("tbody");
-    dBody.innerHTML="";
-    Object.keys(daily).sort((a,b)=>new Date(a)-new Date(b)).forEach(d=>{
-      const v=daily[d];
-      dBody.innerHTML+=`
-        <tr><td>${d}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
-        <td>${(v.r/v.s).toFixed(2)}</td></tr>`;
-    });
-
-    const weekly={};
-    Object.keys(daily).forEach(d=>{
-      const wk=getWeekRange(d);
-      if(!weekly[wk.key]) weekly[wk.key]={label:wk.label,s:0,r:0,u:0};
-      weekly[wk.key].s+=daily[d].s;
-      weekly[wk.key].r+=daily[d].r;
-      weekly[wk.key].u+=daily[d].u;
-    });
-
-    const wBody=weeklyTrendTable.querySelector("tbody");
-    wBody.innerHTML="";
-    Object.values(weekly).forEach(v=>{
-      wBody.innerHTML+=`
-        <tr><td>${v.label}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
-        <td>${(v.r/v.s).toFixed(2)}</td></tr>`;
-    });
-  };
-  reader.readAsText(file);
-}
-
-/**************** PLACEMENT REPORT ****************/
-function generatePlacement() {
-  const file = placementFile.files[0];
-  if (!file) return alert("Upload Placement CSV");
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const rows=parseCSV(reader.result);
-    const period=extractReportPeriod(rows);
-    if(period.start||period.end){
-      reportPeriodPlacement.innerHTML=`Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
-    }
-
-    const hRow=autoDetectHeader(rows,["Placement Type","Campaign Name","Ad Spend"]);
-    const headers=rows[hRow];
-    const data=rows.slice(hRow+1);
-    const h=n=>headers.indexOf(n);
-
-    const overall={}, cmap={};
-
-    data.forEach(r=>{
-      const c=r[h("Campaign Name")], id=r[h("Campaign ID")], p=r[h("Placement Type")];
-      if(!c||!p) return;
-      const s=+r[h("Ad Spend")]||0;
-      const u=(+r[h("Direct Units Sold")]||0)+(+r[h("Indirect Units Sold")]||0);
-      const rv=(+r[h("Direct Revenue")]||0)+(+r[h("Indirect Revenue")]||0);
-
-      if(!overall[p]) overall[p]={s:0,r:0,u:0};
-      overall[p].s+=s; overall[p].r+=rv; overall[p].u+=u;
-
-      if(!cmap[c]) cmap[c]={id,rows:{}};
-      if(!cmap[c].rows[p]) cmap[c].rows[p]={s:0,r:0,u:0};
-      cmap[c].rows[p].s+=s; cmap[c].rows[p].r+=rv; cmap[c].rows[p].u+=u;
-    });
-
-    placementOverallTable.querySelector("tbody").innerHTML=
-      Object.entries(overall).map(([p,v])=>{
-        const roi=v.r/v.s;
-        return `<tr class="${roiClass(roi)}">
-          <td>${p}</td><td>${v.s.toFixed(0)}</td>
+    kwSegment.querySelector("tbody").innerHTML=
+      Object.entries(kw).map(([k,v])=>{
+        const roi=v.s?v.r/v.s:0;
+        const [seg,act]=kwSegment(roi);
+        return `<tr>
+          <td>${k}</td><td>${v.s.toFixed(0)}</td>
           <td>${v.r.toFixed(0)}</td><td>${v.u}</td>
-          <td>${roi.toFixed(2)}</td></tr>`;
-      }).join("");
-
-    const tb=placementCampaignTable.querySelector("tbody");
-    tb.innerHTML="";
-    let i=0;
-    Object.entries(cmap).forEach(([c,o])=>{
-      const g=`grp-${i++}`;
-      const t=Object.values(o.rows).reduce((a,v)=>({s:a.s+v.s,r:a.r+v.r,u:a.u+v.u}),{s:0,r:0,u:0});
-      tb.innerHTML+=`
-        <tr class="campaign-group" data-group="${g}">
-          <td><span class="campaign-toggle">▶</span>${c} (${o.id})</td>
-          <td></td><td>${t.s.toFixed(0)}</td>
-          <td>${t.r.toFixed(0)}</td><td>${t.u}</td>
-          <td>${(t.r/t.s).toFixed(2)}</td></tr>`;
-      Object.entries(o.rows).forEach(([p,v])=>{
-        const roi=v.r/v.s;
-        tb.innerHTML+=`
-          <tr class="hidden-row ${roiClass(roi)}" data-parent="${g}">
-            <td></td><td>${p}</td><td>${v.s.toFixed(0)}</td>
-            <td>${v.r.toFixed(0)}</td><td>${v.u}</td>
-            <td>${roi.toFixed(2)}</td></tr>`;
-      });
-    });
-
-    document.querySelectorAll(".campaign-group").forEach(r=>{
-      r.onclick=()=>{
-        const g=r.dataset.group;
-        const rows=document.querySelectorAll(`[data-parent="${g}"]`);
-        const ic=r.querySelector(".campaign-toggle");
-        const c=rows[0].classList.contains("hidden-row");
-        rows.forEach(x=>x.classList.toggle("hidden-row",!c));
-        ic.textContent=c?"▼":"▶";
-      };
-    });
-  };
-  reader.readAsText(file);
-}
-
-function expandAllCampaigns(){
-  document.querySelectorAll("[data-parent]").forEach(r=>r.classList.remove("hidden-row"));
-}
-function collapseAllCampaigns(){
-  document.querySelectorAll("[data-parent]").forEach(r=>r.classList.add("hidden-row"));
-}
-
-/**************** TRAFFIC REPORT ****************/
-function generateTraffic() {
-  const file = trafficFile.files[0];
-  if (!file) return alert("Upload Traffic CSV");
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    const rows=parseCSV(reader.result);
-    const period=extractReportPeriod(rows);
-    if(period.start||period.end){
-      trafficPeriod.innerHTML=`Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
-    }
-
-    const hRow=autoDetectHeader(rows,["SKU Id","Impression Date"]);
-    const headers=rows[hRow];
-    const data=rows.slice(hRow+1);
-    const h=n=>headers.indexOf(n);
-
-    let I=0,C=0,R=0;
-    const daily={}, sku={};
-
-    data.forEach(r=>{
-      const d=r[h("Impression Date")], s=r[h("SKU Id")], t=r[h("Product Title")];
-      const i=+r[h("Impressions")]||0;
-      const c=+r[h("Product Clicks")]||0;
-      const rv=+r[h("Revenue")]||0;
-      I+=i; C+=c; R+=rv;
-
-      if(d){ if(!daily[d]) daily[d]={i:0,c:0,r:0};
-        daily[d].i+=i; daily[d].c+=c; daily[d].r+=rv; }
-
-      if(s){ if(!sku[s]) sku[s]={t,i:0,c:0,r:0};
-        sku[s].i+=i; sku[s].c+=c; sku[s].r+=rv; }
-    });
-
-    trafficKpi.innerHTML=`
-      <div class="kpi">Impressions<br>${I}</div>
-      <div class="kpi">Clicks<br>${C}</div>
-      <div class="kpi">Revenue<br>₹${R.toFixed(0)}</div>
-      <div class="kpi">CVR<br>${(C?R/C:0).toFixed(2)}</div>
-    `;
-
-    trafficDailyTable.querySelector("tbody").innerHTML=
-      Object.keys(daily).sort((a,b)=>new Date(a)-new Date(b))
-      .map(d=>`<tr><td>${d}</td><td>${daily[d].i}</td>
-      <td>${daily[d].c}</td><td>${daily[d].r.toFixed(0)}</td>
-      <td>${(daily[d].c?daily[d].r/daily[d].c:0).toFixed(2)}</td></tr>`).join("");
-
-    trafficSkuTable.querySelector("tbody").innerHTML=
-      Object.entries(sku).map(([k,v])=>{
-        const ctr=v.i?v.c/v.i:0, cvr=v.c?v.r/v.c:0;
-        let st="🟢 Healthy";
-        if(v.i>1000&&ctr<0.02) st="🔴 CTR Weak";
-        else if(v.c>50&&cvr<0.05) st="🟠 Conversion Leak";
-        return `<tr><td>${k}</td><td>${v.t||""}</td><td>${v.i}</td>
-        <td>${v.c}</td><td>${v.r.toFixed(0)}</td>
-        <td>${(ctr*100).toFixed(2)}%</td><td>${(cvr*100).toFixed(2)}%</td>
-        <td>${st}</td></tr>`;
+          <td>${roi.toFixed(2)}</td><td>${seg}</td><td>${act}</td>
+        </tr>`;
       }).join("");
   };
-  reader.readAsText(file);
+  r.readAsText(f);
 }
