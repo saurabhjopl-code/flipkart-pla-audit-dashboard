@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   });
 });
+document.getElementById("campaignFile")
+  ?.addEventListener("change", () => {});
 
 /**************** CSV PARSER ****************/
 function parseCSV(text) {
@@ -522,6 +524,7 @@ function collapseAllOrderAdgroups(){
   document.querySelectorAll("#orderAdgroupTable .hidden-row")
     .forEach(r=>r.classList.add("hidden-row"));
 }
+
 
 
 
