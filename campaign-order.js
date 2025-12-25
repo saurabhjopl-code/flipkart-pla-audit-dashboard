@@ -1,7 +1,21 @@
 /*************************************************
  * CAMPAIGN ORDER REPORT
  * Fully isolated module
- * Headers are FIXED and FINAL
+ * HEADER CONTRACT (FINAL – DO NOT CHANGE):
+ *
+ * Campaign ID
+ * AdGroup Name
+ * Listing ID
+ * Product Name
+ * Advertised FSN ID
+ * Date
+ * order_id
+ * AdGroup CPC
+ * Expected ROI
+ * Purchased FSN ID
+ * Total Revenue (Rs.)
+ * Direct Units Sold
+ * Indirect Units Sold
  *************************************************/
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,16 +38,14 @@ function generateCampaignOrderReport() {
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    /* ================= HEADER (FIXED CONTRACT) ================= */
+    /* ================= HEADER (FIXED POSITION) ================= */
     // Header row is ALWAYS index 2
     const headers = rows[2];
     const data = rows.slice(3);
 
     const idx = {
       campaign: headers.indexOf("Campaign ID"),
-      adgroup: headers.indexOf("AdGroup Name"), // not used but validated
       advFsn: headers.indexOf("Advertised FSN ID"),
-      purFsn: headers.indexOf("Purchased FSN ID"),
       date: headers.indexOf("Date"),
       direct: headers.indexOf("Direct Units Sold"),
       indirect: headers.indexOf("Indirect Units Sold"),
@@ -41,10 +53,10 @@ function generateCampaignOrderReport() {
     };
 
     /* ================= HARD VALIDATION ================= */
-    for (const [key, value] of Object.entries(idx)) {
-      if (value === -1) {
+    for (const [k, v] of Object.entries(idx)) {
+      if (v === -1) {
         alert(
-          `Campaign Order CSV structure mismatch.\nMissing header: ${key}`
+          "Campaign Order CSV structure mismatch.\nMissing header: " + k
         );
         return;
       }
@@ -52,7 +64,6 @@ function generateCampaignOrderReport() {
 
     /* ================= AGGREGATION ================= */
     const campaignMap = {};
-    const fsnMap = {};
     const dateMap = {};
 
     data.forEach(r => {
@@ -60,7 +71,6 @@ function generateCampaignOrderReport() {
       if (!campaign) return;
 
       const advFsn = r[idx.advFsn];
-      const purFsn = r[idx.purFsn];
       const date = r[idx.date];
 
       const du = +r[idx.direct] || 0;
@@ -68,7 +78,7 @@ function generateCampaignOrderReport() {
       const units = du + iu;
       const revenue = +r[idx.revenue] || 0;
 
-      /* Campaign Summary */
+      /* -------- Campaign -------- */
       if (!campaignMap[campaign]) {
         campaignMap[campaign] = {
           orders: 0,
@@ -86,7 +96,7 @@ function generateCampaignOrderReport() {
       campaignMap[campaign].units += units;
       campaignMap[campaign].revenue += revenue;
 
-      /* Campaign → FSN */
+      /* -------- Campaign → Advertised FSN -------- */
       if (!campaignMap[campaign].fsns[advFsn]) {
         campaignMap[campaign].fsns[advFsn] = {
           orders: 0,
@@ -99,36 +109,28 @@ function generateCampaignOrderReport() {
       campaignMap[campaign].fsns[advFsn].units += units;
       campaignMap[campaign].fsns[advFsn].revenue += revenue;
 
-      /* FSN Contribution */
-      if (!fsnMap[advFsn]) {
-        fsnMap[advFsn] = {
-          advFsn,
-          purFsn,
+      /* -------- Date Trend -------- */
+      if (!dateMap[date]) {
+        dateMap[date] = {
           orders: 0,
+          direct: 0,
+          indirect: 0,
           units: 0,
           revenue: 0
         };
       }
 
-      fsnMap[advFsn].orders++;
-      fsnMap[advFsn].units += units;
-      fsnMap[advFsn].revenue += revenue;
-
-      /* Date Trend */
-      if (!dateMap[date]) {
-        dateMap[date] = { orders: 0, units: 0, revenue: 0 };
-      }
-
       dateMap[date].orders++;
+      dateMap[date].direct += du;
+      dateMap[date].indirect += iu;
       dateMap[date].units += units;
       dateMap[date].revenue += revenue;
     });
 
-    /* ================= RENDER ================= */
-
-    // Campaign Summary
+    /* ================= RENDER: CAMPAIGN SUMMARY ================= */
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
+
     Object.entries(campaignMap)
       .sort((a, b) => b[1].revenue - a[1].revenue)
       .forEach(([c, v]) => {
@@ -140,27 +142,56 @@ function generateCampaignOrderReport() {
             <td>${v.indirect}</td>
             <td>${v.units}</td>
             <td>${v.revenue.toFixed(0)}</td>
-          </tr>`;
+          </tr>
+        `;
       });
 
-    // Campaign → FSN
+    /* ================= RENDER: CAMPAIGN → FSN (EXPAND / COLLAPSE) ================= */
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
-    Object.entries(campaignMap).forEach(([c, v]) => {
+
+    let gid = 0;
+
+    Object.entries(campaignMap).forEach(([campaign, v]) => {
+      const groupId = "cor_grp_" + gid++;
+
+      // Parent row (Campaign)
+      fsnBody.innerHTML += `
+        <tr class="cor-campaign-row" data-group="${groupId}">
+          <td><b>${campaign}</b></td>
+          <td>${v.orders}</td>
+          <td>${v.units}</td>
+          <td>${v.revenue.toFixed(0)}</td>
+        </tr>
+      `;
+
+      // Child rows (Advertised FSN)
       Object.entries(v.fsns).forEach(([fsn, x]) => {
         fsnBody.innerHTML += `
-          <tr>
-            <td>${c} → ${fsn}</td>
+          <tr class="cor-fsn-row hidden" data-parent="${groupId}">
+            <td style="padding-left:20px">${fsn}</td>
             <td>${x.orders}</td>
             <td>${x.units}</td>
             <td>${x.revenue.toFixed(0)}</td>
-          </tr>`;
+          </tr>
+        `;
       });
     });
 
-    // Date Trend
+    // Toggle logic
+    document.querySelectorAll(".cor-campaign-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const g = row.dataset.group;
+        document
+          .querySelectorAll(`[data-parent="${g}"]`)
+          .forEach(r => r.classList.toggle("hidden"));
+      });
+    });
+
+    /* ================= RENDER: ORDER DATE TREND ================= */
     const dateBody = document.querySelector("#corDateTable tbody");
     dateBody.innerHTML = "";
+
     Object.entries(dateMap)
       .sort((a, b) => new Date(a[0]) - new Date(b[0]))
       .forEach(([d, v]) => {
@@ -168,9 +199,12 @@ function generateCampaignOrderReport() {
           <tr>
             <td>${d}</td>
             <td>${v.orders}</td>
+            <td>${v.direct}</td>
+            <td>${v.indirect}</td>
             <td>${v.units}</td>
             <td>${v.revenue.toFixed(0)}</td>
-          </tr>`;
+          </tr>
+        `;
       });
   };
 
