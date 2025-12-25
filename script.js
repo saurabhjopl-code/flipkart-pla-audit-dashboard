@@ -305,10 +305,9 @@ function generateTraffic() {
 
 }
 /*************************************************
- * CAMPAIGN ORDER REPORT (FULLY ISOLATED)
- * Does NOT interact with any other report
+ * CAMPAIGN ORDER REPORT (ISOLATED & LOCKED)
+ * Headers are FINAL and WILL NOT CHANGE
  *************************************************/
-
 function generateCampaignOrderReport() {
   const file = document.getElementById("campaignOrderFile").files[0];
   if (!file) {
@@ -320,115 +319,167 @@ function generateCampaignOrderReport() {
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    // Fixed header row (as per your file)
+    /* ================= HEADER (FIXED) ================= */
+    // Header row is ALWAYS row index 2
     const headers = rows[2];
     const data = rows.slice(3);
 
     const idx = {
       campaign: headers.indexOf("Campaign ID"),
-      advFsn: headers.indexOf("Advertised FSN / FSN ID"),
-      orderDate: headers.indexOf("Order Date"),
+      adgroup: headers.indexOf("AdGroup Name"),
+      advFsn: headers.indexOf("Advertised FSN ID"),
+      purFsn: headers.indexOf("Purchased FSN ID"),
+      date: headers.indexOf("Date"),
       direct: headers.indexOf("Direct Units Sold"),
       indirect: headers.indexOf("Indirect Units Sold"),
       revenue: headers.indexOf("Total Revenue (Rs.)")
     };
 
-    // HARD FAIL if structure changes
-    for (let k in idx) {
-      if (idx[k] === -1) {
-        alert("Campaign Order CSV structure mismatch. Header missing: " + k);
+    /* ================= HARD VALIDATION ================= */
+    for (const [k, v] of Object.entries(idx)) {
+      if (v === -1) {
+        alert(
+          "Campaign Order CSV structure mismatch.\nMissing header: " +
+          k
+        );
         return;
       }
     }
 
+    /* ================= AGGREGATES ================= */
     const campaignMap = {};
     const fsnMap = {};
     const dateMap = {};
 
     data.forEach(r => {
-      const c = r[idx.campaign];
-      if (!c) return;
+      const campaign = r[idx.campaign];
+      if (!campaign) return;
 
-      const fsn = r[idx.advFsn];
+      const adgroup = r[idx.adgroup];
+      const advFsn = r[idx.advFsn];
+      const purFsn = r[idx.purFsn];
+      const date = r[idx.date];
+
       const du = +r[idx.direct] || 0;
       const iu = +r[idx.indirect] || 0;
       const units = du + iu;
-      const rev = +r[idx.revenue] || 0;
-      const date = r[idx.orderDate];
+      const revenue = +r[idx.revenue] || 0;
 
-      /* Campaign */
-      if (!campaignMap[c]) {
-        campaignMap[c] = { o: 0, d: 0, i: 0, u: 0, r: 0 };
+      /* ===== Campaign Summary ===== */
+      if (!campaignMap[campaign]) {
+        campaignMap[campaign] = {
+          orders: 0,
+          direct: 0,
+          indirect: 0,
+          units: 0,
+          revenue: 0,
+          fsns: {}
+        };
       }
-      campaignMap[c].o++;
-      campaignMap[c].d += du;
-      campaignMap[c].i += iu;
-      campaignMap[c].u += units;
-      campaignMap[c].r += rev;
 
-      /* Campaign → FSN */
-      const cfKey = c + "||" + fsn;
-      if (!fsnMap[cfKey]) {
-        fsnMap[cfKey] = { c, fsn, o: 0, u: 0, r: 0 };
+      campaignMap[campaign].orders++;
+      campaignMap[campaign].direct += du;
+      campaignMap[campaign].indirect += iu;
+      campaignMap[campaign].units += units;
+      campaignMap[campaign].revenue += revenue;
+
+      /* ===== Campaign → Advertised FSN ===== */
+      if (!campaignMap[campaign].fsns[advFsn]) {
+        campaignMap[campaign].fsns[advFsn] = {
+          orders: 0,
+          units: 0,
+          revenue: 0
+        };
       }
-      fsnMap[cfKey].o++;
-      fsnMap[cfKey].u += units;
-      fsnMap[cfKey].r += rev;
 
-      /* Date */
+      campaignMap[campaign].fsns[advFsn].orders++;
+      campaignMap[campaign].fsns[advFsn].units += units;
+      campaignMap[campaign].fsns[advFsn].revenue += revenue;
+
+      /* ===== Product / FSN Contribution ===== */
+      if (!fsnMap[advFsn]) {
+        fsnMap[advFsn] = {
+          advFsn,
+          purFsn,
+          orders: 0,
+          units: 0,
+          revenue: 0
+        };
+      }
+
+      fsnMap[advFsn].orders++;
+      fsnMap[advFsn].units += units;
+      fsnMap[advFsn].revenue += revenue;
+
+      /* ===== Order Date Trend ===== */
       if (!dateMap[date]) {
-        dateMap[date] = { o: 0, u: 0, r: 0 };
+        dateMap[date] = {
+          orders: 0,
+          units: 0,
+          revenue: 0
+        };
       }
-      dateMap[date].o++;
-      dateMap[date].u += units;
-      dateMap[date].r += rev;
+
+      dateMap[date].orders++;
+      dateMap[date].units += units;
+      dateMap[date].revenue += revenue;
     });
 
-    /* ===== Render Campaign Summary ===== */
+    /* ================= RENDER: CAMPAIGN SUMMARY ================= */
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
+
     Object.entries(campaignMap)
-      .sort((a, b) => b[1].r - a[1].r)
+      .sort((a, b) => b[1].revenue - a[1].revenue)
       .forEach(([c, v]) => {
         campBody.innerHTML += `
           <tr>
             <td>${c}</td>
-            <td>${v.o}</td>
-            <td>${v.d}</td>
-            <td>${v.i}</td>
-            <td>${v.u}</td>
-            <td>${v.r.toFixed(0)}</td>
-          </tr>`;
+            <td>${v.orders}</td>
+            <td>${v.direct}</td>
+            <td>${v.indirect}</td>
+            <td>${v.units}</td>
+            <td>${v.revenue.toFixed(0)}</td>
+          </tr>
+        `;
       });
 
-    /* ===== Render Campaign → FSN ===== */
+    /* ================= RENDER: CAMPAIGN → FSN ================= */
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
-    Object.values(fsnMap).forEach(v => {
-      fsnBody.innerHTML += `
-        <tr>
-          <td>${v.c} → ${v.fsn}</td>
-          <td>${v.o}</td>
-          <td>${v.u}</td>
-          <td>${v.r.toFixed(0)}</td>
-        </tr>`;
+
+    Object.entries(campaignMap).forEach(([c, v]) => {
+      Object.entries(v.fsns).forEach(([fsn, x]) => {
+        fsnBody.innerHTML += `
+          <tr>
+            <td>${c} → ${fsn}</td>
+            <td>${x.orders}</td>
+            <td>${x.units}</td>
+            <td>${x.revenue.toFixed(0)}</td>
+          </tr>
+        `;
+      });
     });
 
-    /* ===== Render Date Trend ===== */
+    /* ================= RENDER: DATE TREND ================= */
     const dateBody = document.querySelector("#corDateTable tbody");
     dateBody.innerHTML = "";
+
     Object.entries(dateMap)
       .sort((a, b) => new Date(a[0]) - new Date(b[0]))
       .forEach(([d, v]) => {
         dateBody.innerHTML += `
           <tr>
             <td>${d}</td>
-            <td>${v.o}</td>
-            <td>${v.u}</td>
-            <td>${v.r.toFixed(0)}</td>
-          </tr>`;
+            <td>${v.orders}</td>
+            <td>${v.units}</td>
+            <td>${v.revenue.toFixed(0)}</td>
+          </tr>
+        `;
       });
   };
 
   reader.readAsText(file);
 }
+
+
