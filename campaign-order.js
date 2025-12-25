@@ -1,8 +1,8 @@
 /*************************************************
  * CAMPAIGN ORDER REPORT
  * Fully isolated module
- * HEADER CONTRACT (FINAL – DO NOT CHANGE):
  *
+ * FIXED HEADER CONTRACT (DO NOT CHANGE):
  * Campaign ID
  * AdGroup Name
  * Listing ID
@@ -20,9 +20,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("generateCampaignOrderBtn");
-  if (btn) {
-    btn.addEventListener("click", generateCampaignOrderReport);
-  }
+  if (btn) btn.addEventListener("click", generateCampaignOrderReport);
 });
 
 function generateCampaignOrderReport() {
@@ -49,12 +47,9 @@ function generateCampaignOrderReport() {
       revenue: headers.indexOf("Total Revenue (Rs.)")
     };
 
-    /* ===== Hard validation ===== */
     for (const [k, v] of Object.entries(idx)) {
       if (v === -1) {
-        alert(
-          "Campaign Order CSV structure mismatch.\nMissing header: " + k
-        );
+        alert("Campaign Order CSV missing header: " + k);
         return;
       }
     }
@@ -64,20 +59,20 @@ function generateCampaignOrderReport() {
     const dateMap = {};
 
     data.forEach(r => {
-      const campaign = r[idx.campaign];
-      if (!campaign) return;
+      const c = r[idx.campaign];
+      if (!c) return;
 
-      const advFsn = r[idx.advFsn];
+      const fsn = r[idx.advFsn];
       const date = r[idx.date];
 
       const du = +r[idx.direct] || 0;
       const iu = +r[idx.indirect] || 0;
       const units = du + iu;
-      const revenue = +r[idx.revenue] || 0;
+      const rev = +r[idx.revenue] || 0;
 
       /* Campaign */
-      if (!campaignMap[campaign]) {
-        campaignMap[campaign] = {
+      if (!campaignMap[c]) {
+        campaignMap[c] = {
           orders: 0,
           direct: 0,
           indirect: 0,
@@ -87,26 +82,26 @@ function generateCampaignOrderReport() {
         };
       }
 
-      campaignMap[campaign].orders++;
-      campaignMap[campaign].direct += du;
-      campaignMap[campaign].indirect += iu;
-      campaignMap[campaign].units += units;
-      campaignMap[campaign].revenue += revenue;
+      campaignMap[c].orders++;
+      campaignMap[c].direct += du;
+      campaignMap[c].indirect += iu;
+      campaignMap[c].units += units;
+      campaignMap[c].revenue += rev;
 
-      /* Campaign → Advertised FSN */
-      if (!campaignMap[campaign].fsns[advFsn]) {
-        campaignMap[campaign].fsns[advFsn] = {
+      /* Campaign → FSN */
+      if (!campaignMap[c].fsns[fsn]) {
+        campaignMap[c].fsns[fsn] = {
           orders: 0,
           units: 0,
           revenue: 0
         };
       }
 
-      campaignMap[campaign].fsns[advFsn].orders++;
-      campaignMap[campaign].fsns[advFsn].units += units;
-      campaignMap[campaign].fsns[advFsn].revenue += revenue;
+      campaignMap[c].fsns[fsn].orders++;
+      campaignMap[c].fsns[fsn].units += units;
+      campaignMap[c].fsns[fsn].revenue += rev;
 
-      /* Date Trend */
+      /* Date */
       if (!dateMap[date]) {
         dateMap[date] = {
           orders: 0,
@@ -121,10 +116,10 @@ function generateCampaignOrderReport() {
       dateMap[date].direct += du;
       dateMap[date].indirect += iu;
       dateMap[date].units += units;
-      dateMap[date].revenue += revenue;
+      dateMap[date].revenue += rev;
     });
 
-    /* ===== Render Campaign Summary ===== */
+    /* ================= CAMPAIGN SUMMARY ================= */
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
 
@@ -139,51 +134,42 @@ function generateCampaignOrderReport() {
             <td>${v.indirect}</td>
             <td>${v.units}</td>
             <td>${v.revenue.toFixed(0)}</td>
-          </tr>
-        `;
+          </tr>`;
       });
 
-    /* ===== Render Campaign → FSN (Expand / Collapse) ===== */
+    /* ================= CAMPAIGN → FSN (EXPAND / COLLAPSE) ================= */
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
 
     let gid = 0;
 
-    Object.entries(campaignMap).forEach(([campaign, v]) => {
-      const groupId = "cor_grp_" + gid++;
+    Object.entries(campaignMap).forEach(([c, v]) => {
+      const g = "grp_" + gid++;
 
-      // Parent row (Campaign)
       fsnBody.innerHTML += `
-        <tr class="cor-campaign-row" data-group="${groupId}">
-          <td style="font-weight:600; cursor:pointer">▶ ${campaign}</td>
+        <tr class="cor-campaign-row" data-group="${g}">
+          <td style="cursor:pointer;font-weight:600">▶ ${c}</td>
           <td>${v.orders}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(0)}</td>
-        </tr>
-      `;
+        </tr>`;
 
-      // Child rows (Advertised FSN) – collapsed by default
       Object.entries(v.fsns).forEach(([fsn, x]) => {
         fsnBody.innerHTML += `
-          <tr class="cor-fsn-row hidden" data-parent="${groupId}">
+          <tr class="cor-fsn-row hidden" data-parent="${g}">
             <td style="padding-left:22px">${fsn}</td>
             <td>${x.orders}</td>
             <td>${x.units}</td>
             <td>${x.revenue.toFixed(0)}</td>
-          </tr>
-        `;
+          </tr>`;
       });
     });
 
-    // Toggle expand / collapse
     document.querySelectorAll(".cor-campaign-row").forEach(row => {
-      row.addEventListener("click", () => {
+      row.onclick = () => {
         const g = row.dataset.group;
         const cell = row.querySelector("td");
-        const children = document.querySelectorAll(
-          `[data-parent="${g}"]`
-        );
-
+        const children = document.querySelectorAll(`[data-parent="${g}"]`);
         const collapsed = children[0]?.classList.contains("hidden");
 
         children.forEach(r =>
@@ -194,10 +180,10 @@ function generateCampaignOrderReport() {
           collapsed ? "▶" : "▼",
           collapsed ? "▼" : "▶"
         );
-      });
+      };
     });
 
-    /* ===== Render Order Date Trend ===== */
+    /* ================= ORDER DATE TREND ================= */
     const dateBody = document.querySelector("#corDateTable tbody");
     dateBody.innerHTML = "";
 
@@ -212,9 +198,54 @@ function generateCampaignOrderReport() {
             <td>${v.indirect}</td>
             <td>${v.units}</td>
             <td>${v.revenue.toFixed(0)}</td>
-          </tr>
-        `;
+          </tr>`;
       });
+
+    /* ================= DIRECT vs INDIRECT IMPACT ================= */
+
+    // Campaign level
+    const diCampBody = document.querySelector("#diCampaignTable tbody");
+    diCampBody.innerHTML = "";
+
+    Object.entries(campaignMap).forEach(([c, v]) => {
+      const assist =
+        (v.indirect / Math.max(v.direct + v.indirect, 1)) * 100;
+
+      const directRev =
+        v.revenue * (v.direct / Math.max(v.direct + v.indirect, 1));
+      const indirectRev =
+        v.revenue * (v.indirect / Math.max(v.direct + v.indirect, 1));
+
+      diCampBody.innerHTML += `
+        <tr>
+          <td>${c}</td>
+          <td>${v.direct}</td>
+          <td>${v.indirect}</td>
+          <td>${assist.toFixed(1)}%</td>
+          <td>${directRev.toFixed(0)}</td>
+          <td>${indirectRev.toFixed(0)}</td>
+        </tr>`;
+    });
+
+    // FSN level (proxy split)
+    const diFsnBody = document.querySelector("#diFsnTable tbody");
+    diFsnBody.innerHTML = "";
+
+    Object.entries(campaignMap).forEach(([_, v]) => {
+      const assistRatio =
+        v.indirect / Math.max(v.direct + v.indirect, 1);
+
+      Object.entries(v.fsns).forEach(([fsn, x]) => {
+        diFsnBody.innerHTML += `
+          <tr>
+            <td>${fsn}</td>
+            <td>${Math.round(x.units * (1 - assistRatio))}</td>
+            <td>${Math.round(x.units * assistRatio)}</td>
+            <td>${(assistRatio * 100).toFixed(1)}%</td>
+            <td>${x.revenue.toFixed(0)}</td>
+          </tr>`;
+      });
+    });
   };
 
   reader.readAsText(fileInput.files[0]);
