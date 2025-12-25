@@ -73,84 +73,145 @@ function generateCampaign() {
 
   const reader = new FileReader();
   reader.onload = () => {
-    const rows = parseCSV(reader.result);
-    const period = extractReportPeriod(rows);
-    if (period.start || period.end) {
-      reportPeriod.innerHTML = `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
-    }
+  const rows = parseCSV(reader.result);
 
-    const hRow = autoDetectHeader(rows, ["Campaign Name", "Ad Spend"]);
-    const headers = rows[hRow];
-    const data = rows.slice(hRow + 1);
-    const h = n => headers.indexOf(n);
+  /* -------- Period -------- */
+  const period = extractReportPeriod(rows);
+  orderPeriod.innerHTML =
+    `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    let S=0,R=0,U=0;
-    const cmap={}, daily={};
+  const headers = rows[2];
+  const data = rows.slice(3);
+  const h = n => headers.indexOf(n);
 
-    data.forEach(r=>{
-      const c=r[h("Campaign Name")];
-      const d=r[h("Date")];
-      if(!c) return;
-      const s=+r[h("Ad Spend")]||0;
-      const rV=+r[h("Total Revenue (Rs.)")]||0;
-      const u=+r[h("Total converted units")]||0;
-      S+=s;R+=rV;U+=u;
-
-      if(!cmap[c]) cmap[c]={s:0,r:0,u:0};
-      cmap[c].s+=s; cmap[c].r+=rV; cmap[c].u+=u;
-
-      if(d){
-        if(!daily[d]) daily[d]={s:0,r:0,u:0};
-        daily[d].s+=s; daily[d].r+=rV; daily[d].u+=u;
-      }
-    });
-
-    campaignKpi.innerHTML = `
-      <div class="kpi">Spend<br>₹${S.toFixed(0)}</div>
-      <div class="kpi">Revenue<br>₹${R.toFixed(0)}</div>
-      <div class="kpi">ROI<br>${(R/S).toFixed(2)}</div>
-      <div class="kpi">Units<br>${U}</div>
-    `;
-
-    const tb=campaignTable.querySelector("tbody");
-    tb.innerHTML="";
-    Object.entries(cmap).sort((a,b)=>b[1].s-a[1].s).forEach(([c,v])=>{
-      const roi=v.r/v.s;
-      const st=roi<3?"🔴 Loss":roi<=5?"🟠 Optimize":"🟢 Scale";
-      tb.innerHTML+=`
-        <tr><td>${c}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.r.toFixed(0)}</td><td>${v.u}</td>
-        <td>${roi.toFixed(2)}</td><td>${st}</td></tr>`;
-    });
-
-    const dBody=dailyTrendTable.querySelector("tbody");
-    dBody.innerHTML="";
-    Object.keys(daily).sort((a,b)=>new Date(a)-new Date(b)).forEach(d=>{
-      const v=daily[d];
-      dBody.innerHTML+=`
-        <tr><td>${d}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
-        <td>${(v.r/v.s).toFixed(2)}</td></tr>`;
-    });
-
-    const weekly={};
-    Object.keys(daily).forEach(d=>{
-      const wk=getWeekRange(d);
-      if(!weekly[wk.key]) weekly[wk.key]={label:wk.label,s:0,r:0,u:0};
-      weekly[wk.key].s+=daily[d].s;
-      weekly[wk.key].r+=daily[d].r;
-      weekly[wk.key].u+=daily[d].u;
-    });
-
-    const wBody=weeklyTrendTable.querySelector("tbody");
-    wBody.innerHTML="";
-    Object.values(weekly).forEach(v=>{
-      wBody.innerHTML+=`
-        <tr><td>${v.label}</td><td>${v.s.toFixed(0)}</td>
-        <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
-        <td>${(v.r/v.s).toFixed(2)}</td></tr>`;
-    });
+  const idx = {
+    campaign: h("Campaign ID"),
+    adgroup: h("AdGroup Name"),
+    product: h("Product Name"),
+    fsn: h("Advertised FSN / FSN ID"),
+    date: h("Order Date"),
+    direct: h("Direct Units Sold"),
+    indirect: h("Indirect Units Sold"),
+    revenue: h("Total Revenue (Rs.)")
   };
+
+  const campMap = {}, adgMap = {}, prodMap = {}, dateMap = {};
+
+  data.forEach(r => {
+    const c = r[idx.campaign];
+    if (!c) return;
+
+    const ag = r[idx.adgroup] || "Unknown";
+    const p = r[idx.product] || "Unknown";
+    const f = r[idx.fsn] || "-";
+    const d = r[idx.date];
+    const du = +r[idx.direct] || 0;
+    const iu = +r[idx.indirect] || 0;
+    const rev = +r[idx.revenue] || 0;
+    const units = du + iu;
+
+    /* Campaign summary */
+    if (!campMap[c]) campMap[c] = { o:0,d:0,i:0,r:0 };
+    campMap[c].o++; campMap[c].d+=du; campMap[c].i+=iu; campMap[c].r+=rev;
+
+    /* AdGroup */
+    if (!adgMap[c]) adgMap[c] = {};
+    if (!adgMap[c][ag]) adgMap[c][ag] = { o:0,u:0,r:0 };
+    adgMap[c][ag].o++; adgMap[c][ag].u+=units; adgMap[c][ag].r+=rev;
+
+    /* Product */
+    const key = p+"||"+f;
+    if (!prodMap[key]) prodMap[key] = { p,f,camps:new Set(),o:0,u:0,r:0 };
+    prodMap[key].camps.add(c);
+    prodMap[key].o++; prodMap[key].u+=units; prodMap[key].r+=rev;
+
+    /* Date */
+    if (d) {
+      if (!dateMap[d]) dateMap[d] = { o:0,u:0,r:0 };
+      dateMap[d].o++; dateMap[d].u+=units; dateMap[d].r+=rev;
+    }
+  });
+
+  /* ================= SUMMARY ================= */
+  const sumBody = orderCampaignTable.querySelector("tbody");
+  sumBody.innerHTML = "";
+  Object.entries(campMap)
+    .sort((a,b)=>b[1].r-a[1].r)
+    .forEach(([c,v])=>{
+      const assist = v.d+v.i ? (v.i/(v.d+v.i))*100 : 0;
+      sumBody.innerHTML += `
+        <tr>
+          <td>${c}</td><td>${v.o}</td>
+          <td>${v.d}</td><td>${v.i}</td>
+          <td>${v.d+v.i}</td>
+          <td>${v.r.toFixed(0)}</td>
+          <td>${assist.toFixed(1)}%</td>
+        </tr>`;
+    });
+
+  /* ================= CAMPAIGN → ADGROUP ================= */
+  const agBody = orderAdgroupTable.querySelector("tbody");
+  agBody.innerHTML = "";
+  let i=0;
+  Object.entries(adgMap).forEach(([c,ags])=>{
+    const gid="oadg"+(i++);
+    const total = Object.values(ags)
+      .reduce((a,v)=>({o:a.o+v.o,u:a.u+v.u,r:a.r+v.r}),{o:0,u:0,r:0});
+    agBody.innerHTML += `
+      <tr class="campaign-group" data-group="${gid}">
+        <td><span class="campaign-toggle">▶</span>${c}</td>
+        <td>${total.o}</td><td></td><td></td>
+        <td>${total.u}</td><td>${total.r.toFixed(0)}</td>
+      </tr>`;
+    Object.entries(ags).forEach(([ag,v])=>{
+      agBody.innerHTML += `
+        <tr class="hidden-row" data-parent="${gid}">
+          <td>${ag}</td><td>${v.o}</td><td></td><td></td>
+          <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+  });
+
+  document.querySelectorAll("#orderAdgroupTable .campaign-group")
+    .forEach(r=>{
+      r.onclick=()=>{
+        const g=r.dataset.group;
+        document.querySelectorAll(`[data-parent="${g}"]`)
+          .forEach(x=>x.classList.toggle("hidden-row"));
+        r.querySelector(".campaign-toggle").textContent =
+          r.querySelector(".campaign-toggle").textContent==="▶"?"▼":"▶";
+      };
+    });
+
+  /* ================= PRODUCT / FSN ================= */
+  const pBody = orderProductTable.querySelector("tbody");
+  pBody.innerHTML = "";
+  Object.values(prodMap)
+    .sort((a,b)=>b.r-a.r)
+    .forEach(v=>{
+      pBody.innerHTML += `
+        <tr>
+          <td>${v.p}</td><td>${v.f}</td>
+          <td>${v.camps.size}</td>
+          <td>${v.o}</td><td>${v.u}</td>
+          <td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+
+  /* ================= DATE TREND ================= */
+  const dBody = orderDateTable.querySelector("tbody");
+  dBody.innerHTML = "";
+  Object.keys(dateMap).sort((a,b)=>new Date(a)-new Date(b))
+    .forEach(d=>{
+      const v=dateMap[d];
+      dBody.innerHTML += `
+        <tr>
+          <td>${d}</td><td>${v.o}</td>
+          <td>${v.u}</td><td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+};
+;
   reader.readAsText(file);
 }
 
@@ -355,3 +416,4 @@ function generateCampaignOrder() {
   };
   reader.readAsText(file);
 }
+
