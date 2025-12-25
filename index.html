@@ -234,6 +234,32 @@
   <tbody></tbody>
 </table>
  </section>
+  <div id="campaignOrderReport" class="tab-content">
+
+  <h2>Campaign Order Report</h2>
+
+  <div class="cor-controls">
+    <button onclick="COR_expandAll()">Expand All</button>
+    <button onclick="COR_collapseAll()">Collapse All</button>
+
+    <select onchange="COR_renderCampaignSummary(this.value)">
+      <option value="revenue">Sort by Revenue</option>
+      <option value="units">Sort by Units</option>
+      <option value="assist">Sort by Assist Index</option>
+    </select>
+  </div>
+
+  <div id="COR_summary"></div>
+  <div id="COR_directIndirect"></div>
+  <div id="COR_campaignAdgroup"></div>
+  <div id="COR_productFSN"></div>
+  <div id="COR_orderTrend"></div>
+  <div id="COR_assistIndex"></div>
+  <div id="COR_highValue"></div>
+  <div id="COR_consistency"></div>
+
+</div>
+
 <script src="keyword.js"></script>
 
 <footer class="footer">
