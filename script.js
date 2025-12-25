@@ -365,68 +365,155 @@ function generateTraffic() {
   reader.readAsText(file);
 
 }
+
 function generateCampaignOrder() {
   const file = document.getElementById("orderFile").files[0];
-  if (!file) return alert("Upload Campaign Order CSV");
+  if (!file) {
+    alert("Upload Campaign Order CSV");
+    return;
+  }
 
   const reader = new FileReader();
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
+    // 🔍 DEBUG (remove later if you want)
+    console.log("RAW ROWS:", rows.slice(0, 6));
+
+    // ===== Detect header row safely =====
+    const hRow = autoDetectHeader(rows, [
+      "Campaign",
+      "Order",
+      "Revenue",
+      "Units"
+    ]);
+
+    const headers = rows[hRow].map(h =>
+      h.toLowerCase().replace(/\s+/g, "").replace(/[()₹]/g, "")
+    );
+
+    const data = rows.slice(hRow + 1);
+
+    // ===== Flexible index resolver =====
+    const col = name =>
+      headers.findIndex(h => h.includes(name));
+
+    const idx = {
+      campaign: col("campaign"),
+      adgroup: col("adgroup"),
+      product: col("product"),
+      fsn: col("fsn"),
+      date: col("orderdate"),
+      direct: col("directunit"),
+      indirect: col("indirectunit"),
+      revenue: col("revenue")
+    };
+
+    console.log("COLUMN INDEXES:", idx);
+
+    // 🚨 HARD FAIL if campaign column missing
+    if (idx.campaign === -1) {
+      alert("Campaign column not detected. Check CSV headers.");
+      return;
+    }
+
+    // ===== Period =====
     const period = extractReportPeriod(rows);
     orderPeriod.innerHTML =
       `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    // ✅ Auto-detect header row (same as other reports)
-const hRow = autoDetectHeader(rows, [
-  "Campaign ID",
-  "AdGroup Name",
-  "Order Date",
-  "Direct Units Sold",
-  "Indirect Units Sold",
-  "Total Revenue (Rs.)"
-]);
-
-const headers = rows[hRow];
-const data = rows.slice(hRow + 1);
-const h = n => headers.indexOf(n);
-
-
-    const map = {};
+    const campMap = {}, adgMap = {}, prodMap = {}, dateMap = {};
 
     data.forEach(r => {
-      const c = r[h("Campaign ID")];
+      const c = r[idx.campaign];
       if (!c) return;
 
-      if (!map[c]) map[c] = { o: 0, d: 0, i: 0, r: 0 };
+      const ag = idx.adgroup !== -1 ? r[idx.adgroup] : "Unknown";
+      const p = idx.product !== -1 ? r[idx.product] : "Unknown";
+      const f = idx.fsn !== -1 ? r[idx.fsn] : "-";
+      const d = idx.date !== -1 ? r[idx.date] : "";
 
-      map[c].o++;
-      map[c].d += +r[h("Direct Units Sold")] || 0;
-      map[c].i += +r[h("Indirect Units Sold")] || 0;
-      map[c].r += +r[h("Total Revenue (Rs.)")] || 0;
+      const du = idx.direct !== -1 ? +r[idx.direct] || 0 : 0;
+      const iu = idx.indirect !== -1 ? +r[idx.indirect] || 0 : 0;
+      const rev = idx.revenue !== -1 ? +r[idx.revenue] || 0 : 0;
+      const units = du + iu;
+
+      // Campaign
+      if (!campMap[c]) campMap[c] = { o:0,d:0,i:0,r:0 };
+      campMap[c].o++; campMap[c].d+=du; campMap[c].i+=iu; campMap[c].r+=rev;
+
+      // AdGroup
+      if (!adgMap[c]) adgMap[c] = {};
+      if (!adgMap[c][ag]) adgMap[c][ag] = { o:0,u:0,r:0 };
+      adgMap[c][ag].o++; adgMap[c][ag].u+=units; adgMap[c][ag].r+=rev;
+
+      // Product / FSN
+      const key = p+"||"+f;
+      if (!prodMap[key])
+        prodMap[key] = { p,f,camps:new Set(),o:0,u:0,r:0 };
+      prodMap[key].camps.add(c);
+      prodMap[key].o++; prodMap[key].u+=units; prodMap[key].r+=rev;
+
+      // Date
+      if (d) {
+        if (!dateMap[d]) dateMap[d] = { o:0,u:0,r:0 };
+        dateMap[d].o++; dateMap[d].u+=units; dateMap[d].r+=rev;
+      }
     });
 
-    const tbody = orderCampaignTable.querySelector("tbody");
-    tbody.innerHTML = "";
-
-    Object.entries(map).forEach(([c, v]) => {
-      const units = v.d + v.i;
-      const assist = units ? (v.i / units) * 100 : 0;
-
-      tbody.innerHTML += `
+    // ===== Render Campaign Summary =====
+    const sumBody = orderCampaignTable.querySelector("tbody");
+    sumBody.innerHTML = "";
+    Object.entries(campMap).forEach(([c,v])=>{
+      const assist = v.d+v.i ? (v.i/(v.d+v.i))*100 : 0;
+      sumBody.innerHTML += `
         <tr>
           <td>${c}</td>
           <td>${v.o}</td>
           <td>${v.d}</td>
           <td>${v.i}</td>
-          <td>${units}</td>
+          <td>${v.d+v.i}</td>
           <td>${v.r.toFixed(0)}</td>
           <td>${assist.toFixed(1)}%</td>
         </tr>`;
     });
+
+    // ===== Render Product / FSN =====
+    const pBody = orderProductTable.querySelector("tbody");
+    pBody.innerHTML = "";
+    Object.values(prodMap).forEach(v=>{
+      pBody.innerHTML += `
+        <tr>
+          <td>${v.p}</td>
+          <td>${v.f}</td>
+          <td>${v.camps.size}</td>
+          <td>${v.o}</td>
+          <td>${v.u}</td>
+          <td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+
+    // ===== Render Date Trend =====
+    const dBody = orderDateTable.querySelector("tbody");
+    dBody.innerHTML = "";
+    Object.keys(dateMap)
+      .sort((a,b)=>new Date(a)-new Date(b))
+      .forEach(d=>{
+        const v=dateMap[d];
+        dBody.innerHTML += `
+          <tr>
+            <td>${d}</td>
+            <td>${v.o}</td>
+            <td>${v.u}</td>
+            <td>${v.r.toFixed(0)}</td>
+          </tr>`;
+      });
   };
+
   reader.readAsText(file);
 }
+
+
 function expandAllOrderAdgroups(){
   document.querySelectorAll("#orderAdgroupTable .hidden-row")
     .forEach(r=>r.classList.remove("hidden-row"));
@@ -435,6 +522,7 @@ function collapseAllOrderAdgroups(){
   document.querySelectorAll("#orderAdgroupTable .hidden-row")
     .forEach(r=>r.classList.add("hidden-row"));
 }
+
 
 
 
