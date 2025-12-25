@@ -302,4 +302,133 @@ function generateTraffic() {
       }).join("");
   };
   reader.readAsText(file);
+
+}
+/*************************************************
+ * CAMPAIGN ORDER REPORT (FULLY ISOLATED)
+ * Does NOT interact with any other report
+ *************************************************/
+
+function generateCampaignOrderReport() {
+  const file = document.getElementById("campaignOrderFile").files[0];
+  if (!file) {
+    alert("Upload Campaign Order Report CSV");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const rows = parseCSV(reader.result);
+
+    // Fixed header row (as per your file)
+    const headers = rows[2];
+    const data = rows.slice(3);
+
+    const idx = {
+      campaign: headers.indexOf("Campaign ID"),
+      advFsn: headers.indexOf("Advertised FSN / FSN ID"),
+      orderDate: headers.indexOf("Order Date"),
+      direct: headers.indexOf("Direct Units Sold"),
+      indirect: headers.indexOf("Indirect Units Sold"),
+      revenue: headers.indexOf("Total Revenue (Rs.)")
+    };
+
+    // HARD FAIL if structure changes
+    for (let k in idx) {
+      if (idx[k] === -1) {
+        alert("Campaign Order CSV structure mismatch. Header missing: " + k);
+        return;
+      }
+    }
+
+    const campaignMap = {};
+    const fsnMap = {};
+    const dateMap = {};
+
+    data.forEach(r => {
+      const c = r[idx.campaign];
+      if (!c) return;
+
+      const fsn = r[idx.advFsn];
+      const du = +r[idx.direct] || 0;
+      const iu = +r[idx.indirect] || 0;
+      const units = du + iu;
+      const rev = +r[idx.revenue] || 0;
+      const date = r[idx.orderDate];
+
+      /* Campaign */
+      if (!campaignMap[c]) {
+        campaignMap[c] = { o: 0, d: 0, i: 0, u: 0, r: 0 };
+      }
+      campaignMap[c].o++;
+      campaignMap[c].d += du;
+      campaignMap[c].i += iu;
+      campaignMap[c].u += units;
+      campaignMap[c].r += rev;
+
+      /* Campaign → FSN */
+      const cfKey = c + "||" + fsn;
+      if (!fsnMap[cfKey]) {
+        fsnMap[cfKey] = { c, fsn, o: 0, u: 0, r: 0 };
+      }
+      fsnMap[cfKey].o++;
+      fsnMap[cfKey].u += units;
+      fsnMap[cfKey].r += rev;
+
+      /* Date */
+      if (!dateMap[date]) {
+        dateMap[date] = { o: 0, u: 0, r: 0 };
+      }
+      dateMap[date].o++;
+      dateMap[date].u += units;
+      dateMap[date].r += rev;
+    });
+
+    /* ===== Render Campaign Summary ===== */
+    const campBody = document.querySelector("#corCampaignTable tbody");
+    campBody.innerHTML = "";
+    Object.entries(campaignMap)
+      .sort((a, b) => b[1].r - a[1].r)
+      .forEach(([c, v]) => {
+        campBody.innerHTML += `
+          <tr>
+            <td>${c}</td>
+            <td>${v.o}</td>
+            <td>${v.d}</td>
+            <td>${v.i}</td>
+            <td>${v.u}</td>
+            <td>${v.r.toFixed(0)}</td>
+          </tr>`;
+      });
+
+    /* ===== Render Campaign → FSN ===== */
+    const fsnBody = document.querySelector("#corFsnTable tbody");
+    fsnBody.innerHTML = "";
+    Object.values(fsnMap).forEach(v => {
+      fsnBody.innerHTML += `
+        <tr>
+          <td>${v.c} → ${v.fsn}</td>
+          <td>${v.o}</td>
+          <td>${v.u}</td>
+          <td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+
+    /* ===== Render Date Trend ===== */
+    const dateBody = document.querySelector("#corDateTable tbody");
+    dateBody.innerHTML = "";
+    Object.entries(dateMap)
+      .sort((a, b) => new Date(a[0]) - new Date(b[0]))
+      .forEach(([d, v]) => {
+        dateBody.innerHTML += `
+          <tr>
+            <td>${d}</td>
+            <td>${v.o}</td>
+            <td>${v.u}</td>
+            <td>${v.r.toFixed(0)}</td>
+          </tr>`;
+      });
+  };
+
+  reader.readAsText(file);
 }
