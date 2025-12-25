@@ -32,14 +32,11 @@ function generateCampaignOrderReport() {
     return;
   }
 
-  const file = fileInput.files[0];
   const reader = new FileReader();
-
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    /* ================= HEADER (FIXED POSITION) ================= */
-    // Header row is ALWAYS index 2
+    /* ===== Fixed header row ===== */
     const headers = rows[2];
     const data = rows.slice(3);
 
@@ -52,7 +49,7 @@ function generateCampaignOrderReport() {
       revenue: headers.indexOf("Total Revenue (Rs.)")
     };
 
-    /* ================= HARD VALIDATION ================= */
+    /* ===== Hard validation ===== */
     for (const [k, v] of Object.entries(idx)) {
       if (v === -1) {
         alert(
@@ -62,7 +59,7 @@ function generateCampaignOrderReport() {
       }
     }
 
-    /* ================= AGGREGATION ================= */
+    /* ===== Aggregation ===== */
     const campaignMap = {};
     const dateMap = {};
 
@@ -78,7 +75,7 @@ function generateCampaignOrderReport() {
       const units = du + iu;
       const revenue = +r[idx.revenue] || 0;
 
-      /* -------- Campaign -------- */
+      /* Campaign */
       if (!campaignMap[campaign]) {
         campaignMap[campaign] = {
           orders: 0,
@@ -96,7 +93,7 @@ function generateCampaignOrderReport() {
       campaignMap[campaign].units += units;
       campaignMap[campaign].revenue += revenue;
 
-      /* -------- Campaign → Advertised FSN -------- */
+      /* Campaign → Advertised FSN */
       if (!campaignMap[campaign].fsns[advFsn]) {
         campaignMap[campaign].fsns[advFsn] = {
           orders: 0,
@@ -109,7 +106,7 @@ function generateCampaignOrderReport() {
       campaignMap[campaign].fsns[advFsn].units += units;
       campaignMap[campaign].fsns[advFsn].revenue += revenue;
 
-      /* -------- Date Trend -------- */
+      /* Date Trend */
       if (!dateMap[date]) {
         dateMap[date] = {
           orders: 0,
@@ -127,7 +124,7 @@ function generateCampaignOrderReport() {
       dateMap[date].revenue += revenue;
     });
 
-    /* ================= RENDER: CAMPAIGN SUMMARY ================= */
+    /* ===== Render Campaign Summary ===== */
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
 
@@ -146,7 +143,7 @@ function generateCampaignOrderReport() {
         `;
       });
 
-    /* ================= RENDER: CAMPAIGN → FSN (EXPAND / COLLAPSE) ================= */
+    /* ===== Render Campaign → FSN (Expand / Collapse) ===== */
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
 
@@ -158,18 +155,18 @@ function generateCampaignOrderReport() {
       // Parent row (Campaign)
       fsnBody.innerHTML += `
         <tr class="cor-campaign-row" data-group="${groupId}">
-          <td><b>${campaign}</b></td>
+          <td style="font-weight:600; cursor:pointer">▶ ${campaign}</td>
           <td>${v.orders}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(0)}</td>
         </tr>
       `;
 
-      // Child rows (Advertised FSN)
+      // Child rows (Advertised FSN) – collapsed by default
       Object.entries(v.fsns).forEach(([fsn, x]) => {
         fsnBody.innerHTML += `
           <tr class="cor-fsn-row hidden" data-parent="${groupId}">
-            <td style="padding-left:20px">${fsn}</td>
+            <td style="padding-left:22px">${fsn}</td>
             <td>${x.orders}</td>
             <td>${x.units}</td>
             <td>${x.revenue.toFixed(0)}</td>
@@ -178,17 +175,29 @@ function generateCampaignOrderReport() {
       });
     });
 
-    // Toggle logic
+    // Toggle expand / collapse
     document.querySelectorAll(".cor-campaign-row").forEach(row => {
       row.addEventListener("click", () => {
         const g = row.dataset.group;
-        document
-          .querySelectorAll(`[data-parent="${g}"]`)
-          .forEach(r => r.classList.toggle("hidden"));
+        const cell = row.querySelector("td");
+        const children = document.querySelectorAll(
+          `[data-parent="${g}"]`
+        );
+
+        const collapsed = children[0]?.classList.contains("hidden");
+
+        children.forEach(r =>
+          r.classList.toggle("hidden", !collapsed)
+        );
+
+        cell.innerHTML = cell.innerHTML.replace(
+          collapsed ? "▶" : "▼",
+          collapsed ? "▼" : "▶"
+        );
       });
     });
 
-    /* ================= RENDER: ORDER DATE TREND ================= */
+    /* ===== Render Order Date Trend ===== */
     const dateBody = document.querySelector("#corDateTable tbody");
     dateBody.innerHTML = "";
 
@@ -208,5 +217,5 @@ function generateCampaignOrderReport() {
       });
   };
 
-  reader.readAsText(file);
+  reader.readAsText(fileInput.files[0]);
 }
