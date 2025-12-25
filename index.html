@@ -1,158 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Flipkart Audit Dashboard</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <title>Audit Dashboard</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="header">
-  <h2>Flipkart Audit Dashboard</h2>
-</div>
+<h2>Audit Dashboard</h2>
 
 <div class="tabs">
-  <button class="tab-btn active" data-tab="campaign">Daily Report</button>
-  <button class="tab-btn" data-tab="placement">Placement Performance</button>
-  <button class="tab-btn" data-tab="traffic">Traffic Report</button>
-  <button class="tab-btn" data-tab="keyword">Keyword Reports</button>
+  <button class="tab-btn active" data-tab="daily">Daily Report</button>
+  <button class="tab-btn" data-tab="placement">Placement</button>
+  <button class="tab-btn" data-tab="traffic">Traffic</button>
+  <button class="tab-btn" data-tab="keyword">Keyword</button>
 </div>
 
-<!-- ================= DAILY REPORT ================= -->
-<section id="campaign" class="tab-content active">
+<section id="daily" class="tab active">
   <h3>Daily Report</h3>
-  <div id="reportPeriod" class="report-period"></div>
-  <input type="file" id="campaignFile" accept=".csv">
-  <button onclick="generateCampaign()">Generate Report</button>
-  <div id="campaignKpi" class="kpis"></div>
-  <table id="campaignTable">
-    <thead>
-      <tr>
-        <th>Campaign Name</th><th>Spend</th><th>Revenue</th>
-        <th>Units</th><th>ROI</th><th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <input type="file" id="dailyFile">
+  <button onclick="generateDaily()">Generate</button>
+  <table id="dailyTable"><tbody></tbody></table>
 </section>
 
-<!-- ================= PLACEMENT ================= -->
-<section id="placement" class="tab-content">
-  <h3>Placement Performance</h3>
-  <div id="reportPeriodPlacement" class="report-period"></div>
-  <input type="file" id="placementFile" accept=".csv">
-  <button onclick="generatePlacement()">Generate Report</button>
-  <table id="placementOverallTable">
-    <thead>
-      <tr><th>Placement</th><th>Spend</th><th>Revenue</th><th>Units</th><th>ROI</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<section id="placement" class="tab">
+  <h3>Placement Report</h3>
+  <input type="file" id="placementFile">
+  <button onclick="generatePlacement()">Generate</button>
+  <table id="placementTable"><tbody></tbody></table>
 </section>
 
-<!-- ================= TRAFFIC ================= -->
-<section id="traffic" class="tab-content">
+<section id="traffic" class="tab">
   <h3>Traffic Report</h3>
-  <div id="trafficPeriod" class="report-period"></div>
-  <input type="file" id="trafficFile" accept=".csv">
-  <button onclick="generateTraffic()">Generate Report</button>
-  <div id="trafficKpi" class="kpis"></div>
-  <table id="trafficDailyTable">
-    <thead>
-      <tr><th>Date</th><th>Impressions</th><th>Clicks</th><th>Revenue</th><th>CVR</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <input type="file" id="trafficFile">
+  <button onclick="generateTraffic()">Generate</button>
+  <table id="trafficTable"><tbody></tbody></table>
 </section>
 
-<!-- ================= KEYWORD REPORT ================= -->
-<section id="keyword" class="tab-content">
-  <h3>Keyword Reports</h3>
-  <div id="keywordPeriod" class="report-period"></div>
-
-  <input type="file" id="keywordFile" accept=".csv">
-  <button onclick="generateKeywordReport()">Generate Report</button>
-
-  <div id="keywordExecutive" class="kpis"></div>
-
-  <h4>Search Term → Keyword Efficiency</h4>
-  <table id="kwEfficiency">
-    <thead>
-      <tr>
-        <th>Search Term</th><th>Keyword</th><th>Spend</th>
-        <th>Revenue</th><th>Units</th><th>ROI</th><th>Status</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>Campaign-wise Keyword Contribution</h4>
-  <table id="kwCampaign">
-    <thead>
-      <tr>
-        <th>Campaign</th><th>Keyword</th><th>Spend</th>
-        <th>Revenue</th><th>Units</th><th>% Contribution</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>Direct vs Indirect Sales Impact</h4>
-  <table id="kwAssist">
-    <thead>
-      <tr>
-        <th>Keyword</th><th>Direct Rev</th><th>Indirect Rev</th>
-        <th>Total Rev</th><th>Assist %</th><th>Role</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>Waste Analysis</h4>
-  <table id="kwWaste">
-    <thead>
-      <tr>
-        <th>Keyword</th><th>Spend</th><th>Clicks</th>
-        <th>Units</th><th>Revenue</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>ROI-Based Segmentation</h4>
-  <table id="kwSegment">
-    <thead>
-      <tr>
-        <th>Keyword</th><th>Spend</th><th>Revenue</th>
-        <th>Units</th><th>ROI</th><th>Segment</th><th>Action</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>Trend – Day-wise</h4>
-  <table id="kwDay">
-    <thead>
-      <tr><th>Date</th><th>Spend</th><th>Revenue</th><th>Units</th><th>ROI</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-
-  <h4>Trend – Week-wise</h4>
-  <table id="kwWeek">
-    <thead>
-      <tr><th>Week</th><th>Spend</th><th>Revenue</th><th>Units</th><th>ROI</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+<section id="keyword" class="tab">
+  <h3>Keyword Report</h3>
+  <input type="file" id="keywordFile">
+  <button onclick="generateKeyword()">Generate</button>
+  <table id="keywordTable"><tbody></tbody></table>
 </section>
-
-<footer class="footer">
-  © 2025 · Made by Saurabh Mondal
-</footer>
 
 <script src="script.js"></script>
+<script src="keyword.js"></script>
 </body>
 </html>
-
-<script src="keyword.js"></script>
