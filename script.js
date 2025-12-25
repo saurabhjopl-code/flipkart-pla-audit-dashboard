@@ -303,3 +303,150 @@ function generateTraffic() {
   };
   reader.readAsText(file);
 }
+/* =====================================================
+   CAMPAIGN ORDER REPORT (ADD-ONLY, LOCKED)
+   Namespace: COR_
+===================================================== */
+
+let COR_campaigns = {};
+
+/* ---------- PARSER ---------- */
+function COR_parseCampaignOrderCSV(rows) {
+  COR_campaigns = {};
+
+  // Skip first 2 rows (Start Date / End Date)
+  rows.slice(2).forEach(r => {
+    const camp = r["Campaign ID"];
+    if (!camp) return;
+
+    if (!COR_campaigns[camp]) {
+      COR_campaigns[camp] = {
+        orders: 0,
+        direct: 0,
+        indirect: 0,
+        revenue: 0
+      };
+    }
+
+    const c = COR_campaigns[camp];
+    const d = +r["Direct Units Sold"] || 0;
+    const i = +r["Indirect Units Sold"] || 0;
+    const rev = +r["Total Revenue (Rs.)"] || 0;
+
+    c.orders++;
+    c.direct += d;
+    c.indirect += i;
+    c.revenue += rev;
+  });
+
+  COR_renderAll();
+}
+
+/* ---------- SUMMARY ---------- */
+function COR_renderCampaignSummary(sortBy = "revenue") {
+  let data = Object.entries(COR_campaigns);
+
+  data.sort((a, b) => {
+    if (sortBy === "units") {
+      return (b[1].direct + b[1].indirect) - (a[1].direct + a[1].indirect);
+    }
+    if (sortBy === "assist") {
+      return (b[1].indirect / (b[1].direct + b[1].indirect || 1)) -
+             (a[1].indirect / (a[1].direct + a[1].indirect || 1));
+    }
+    return b[1].revenue - a[1].revenue;
+  });
+
+  let html = `
+    <h3>Campaign Performance Summary</h3>
+    <table>
+      <tr>
+        <th>Campaign</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Revenue (₹)</th>
+      </tr>`;
+
+  data.forEach(([k, v]) => {
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${v.orders}</td>
+        <td>${v.direct}</td>
+        <td>${v.indirect}</td>
+        <td>${v.direct + v.indirect}</td>
+        <td>${v.revenue.toFixed(2)}</td>
+      </tr>`;
+  });
+
+  html += `</table>`;
+  document.getElementById("COR_summary").innerHTML = html;
+}
+
+/* ---------- DIRECT vs INDIRECT ---------- */
+function COR_renderDirectIndirect() {
+  let html = `
+    <h3>Direct vs Indirect Impact</h3>
+    <table>
+      <tr>
+        <th>Campaign</th>
+        <th>Direct %</th>
+        <th>Indirect %</th>
+      </tr>`;
+
+  Object.entries(COR_campaigns).forEach(([k, v]) => {
+    const total = v.direct + v.indirect || 1;
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${((v.direct / total) * 100).toFixed(1)}%</td>
+        <td>${((v.indirect / total) * 100).toFixed(1)}%</td>
+      </tr>`;
+  });
+
+  html += `</table>`;
+  document.getElementById("COR_directIndirect").innerHTML = html;
+}
+
+/* ---------- ASSIST INDEX ---------- */
+function COR_renderAssistIndex() {
+  let html = `
+    <h3>Campaign Assist Index</h3>
+    <table>
+      <tr>
+        <th>Campaign</th>
+        <th>Assist %</th>
+        <th>Type</th>
+      </tr>`;
+
+  Object.entries(COR_campaigns).forEach(([k, v]) => {
+    const total = v.direct + v.indirect || 1;
+    const assist = (v.indirect / total) * 100;
+    const tag =
+      assist > 60 ? "Assist-heavy" :
+      assist < 30 ? "Conversion-heavy" :
+      "Balanced";
+
+    html += `
+      <tr>
+        <td>${k}</td>
+        <td>${assist.toFixed(1)}%</td>
+        <td>${tag}</td>
+      </tr>`;
+  });
+
+  html += `</table>`;
+  document.getElementById("COR_assistIndex").innerHTML = html;
+}
+
+/* ---------- MASTER ---------- */
+function COR_renderAll() {
+  COR_renderCampaignSummary();
+  COR_renderDirectIndirect();
+  COR_renderAssistIndex();
+}
+
+function COR_expandAll() {}
+function COR_collapseAll() {}
