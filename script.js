@@ -377,9 +377,20 @@ function generateCampaignOrder() {
     orderPeriod.innerHTML =
       `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    const headers = rows[2];
-    const data = rows.slice(3);
-    const h = n => headers.indexOf(n);
+    // ✅ Auto-detect header row (same as other reports)
+const hRow = autoDetectHeader(rows, [
+  "Campaign ID",
+  "AdGroup Name",
+  "Order Date",
+  "Direct Units Sold",
+  "Indirect Units Sold",
+  "Total Revenue (Rs.)"
+]);
+
+const headers = rows[hRow];
+const data = rows.slice(hRow + 1);
+const h = n => headers.indexOf(n);
+
 
     const map = {};
 
@@ -424,5 +435,6 @@ function collapseAllOrderAdgroups(){
   document.querySelectorAll("#orderAdgroupTable .hidden-row")
     .forEach(r=>r.classList.add("hidden-row"));
 }
+
 
 
