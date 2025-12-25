@@ -1,10 +1,12 @@
 /*************************************************
- * KEYWORD ANALYTICS — FINAL LOCKED VERSION
+ * KEYWORD ANALYTICS — FINAL, STABLE, COMPLETE
  * Includes:
  * - Keyword Search
  * - Spend Share %
  * - Top 15 / Show All toggle
- * - Campaign-wise Keyword Performance (fixed)
+ * - Campaign-wise Keyword Performance
+ * - Match-Type Analysis
+ * - Keyword → Campaign Contribution
  * SAFE: DOES NOT TOUCH OTHER REPORTS
  *************************************************/
 
@@ -92,10 +94,26 @@ function generateKeywordReport() {
       kwMap[keyword].units += units;
     });
 
-    renderTopRevenue(kwMap);
-    renderTopWaste(kwMap);
+    /* =====================================================
+       ROI SEGMENTATION CACHE
+    ===================================================== */
+    roiSegmentationCache = Object.entries(kwMap)
+      .sort((a, b) => b[1].spend - a[1].spend)
+      .map(([k, v]) => {
+        const roi = v.spend ? v.revenue / v.spend : 0;
+        const [segment, action] = keywordSegmentByROI(roi);
+        return {
+          keyword: k,
+          spend: v.spend,
+          spendShare: totalSpend ? (v.spend / totalSpend) * 100 : 0,
+          revenue: v.revenue,
+          units: v.units,
+          roi,
+          segment,
+          action
+        };
+      });
 
-    buildROISegmentationCache(kwMap, totalSpend);
     renderROISegmentation();
 
     buildCampaignKeywordTable(data, headers);
@@ -107,75 +125,8 @@ function generateKeywordReport() {
 }
 
 /* =====================================================
-   TOP REVENUE KEYWORDS
+   ROI SEGMENTATION — SEARCH + TOGGLE
 ===================================================== */
-function renderTopRevenue(kwMap) {
-  const body = document.querySelector("#kwTopRevenue tbody");
-  if (!body) return;
-  body.innerHTML = "";
-
-  Object.entries(kwMap)
-    .sort((a, b) => b[1].revenue - a[1].revenue)
-    .slice(0, 10)
-    .forEach(([k, v]) => {
-      const roi = v.spend ? v.revenue / v.spend : 0;
-      body.innerHTML += `
-        <tr>
-          <td>${k}</td>
-          <td>${v.spend.toFixed(0)}</td>
-          <td>${v.revenue.toFixed(0)}</td>
-          <td>${v.units}</td>
-          <td>${roi.toFixed(2)}</td>
-        </tr>`;
-    });
-}
-
-/* =====================================================
-   TOP WASTE KEYWORDS
-===================================================== */
-function renderTopWaste(kwMap) {
-  const body = document.querySelector("#kwTopWaste tbody");
-  if (!body) return;
-  body.innerHTML = "";
-
-  Object.entries(kwMap)
-    .filter(([_, v]) => v.spend > 0 && v.units === 0)
-    .sort((a, b) => b[1].spend - a[1].spend)
-    .slice(0, 10)
-    .forEach(([k, v]) => {
-      body.innerHTML += `
-        <tr>
-          <td>${k}</td>
-          <td>${v.spend.toFixed(0)}</td>
-          <td>${v.revenue.toFixed(0)}</td>
-          <td>${v.units}</td>
-          <td>0.00</td>
-        </tr>`;
-    });
-}
-
-/* =====================================================
-   ROI SEGMENTATION (SEARCH + SPEND SHARE)
-===================================================== */
-function buildROISegmentationCache(kwMap, totalSpend) {
-  roiSegmentationCache = Object.entries(kwMap)
-    .sort((a, b) => b[1].spend - a[1].spend)
-    .map(([k, v]) => {
-      const roi = v.spend ? v.revenue / v.spend : 0;
-      const [segment, action] = keywordSegmentByROI(roi);
-      return {
-        keyword: k,
-        spend: v.spend,
-        spendShare: totalSpend ? (v.spend / totalSpend) * 100 : 0,
-        revenue: v.revenue,
-        units: v.units,
-        roi,
-        segment,
-        action
-      };
-    });
-}
-
 function renderROISegmentation() {
   const tbody = document.querySelector("#kwSegment tbody");
   if (!tbody) return;
@@ -231,7 +182,7 @@ function injectROIToggleButton() {
 }
 
 /* =====================================================
-   CAMPAIGN → KEYWORD PERFORMANCE (COLLAPSIBLE)
+   CAMPAIGN → KEYWORD PERFORMANCE
 ===================================================== */
 function buildCampaignKeywordTable(rows, headers) {
   const table = document.getElementById("kwCampaign");
@@ -320,6 +271,7 @@ function buildMatchTypeAnalysis(rows, headers) {
   rows.forEach(r => {
     const m = r[idx.match];
     if (!m) return;
+
     if (!map[m]) {
       map[m] = {
         keywords: new Set(),
@@ -330,6 +282,7 @@ function buildMatchTypeAnalysis(rows, headers) {
         spend: 0
       };
     }
+
     map[m].keywords.add(r[idx.keyword]);
     map[m].views += num(r[idx.views]);
     map[m].clicks += num(r[idx.clicks]);
