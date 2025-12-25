@@ -522,6 +522,16 @@ function collapseAllOrderAdgroups(){
     .forEach(r=>r.classList.add("hidden-row"));
 }
 
+function expandAllOrderAdgroups() {
+  document.querySelectorAll(".order-child-row")
+    .forEach(r => r.style.display = "table-row");
+}
+
+function collapseAllOrderAdgroups() {
+  document.querySelectorAll(".order-child-row")
+    .forEach(r => r.style.display = "none");
+}
+
 
 
 
