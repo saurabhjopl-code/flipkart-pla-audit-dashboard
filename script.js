@@ -377,7 +377,17 @@ function generateCampaignOrder() {
     const rows = parseCSV(reader.result);
 
     /* ===== Header Detection ===== */
-    const hRow = autoDetectHeader(rows, ["Campaign", "FSN", "Order"]);
+    const headerRow = autoDetectHeader(rows, [
+  "Campaign",
+  "Spend",
+  "Revenue",
+  "Units"
+]);
+    if (headerRow === -1) {
+  alert("Daily Report header not detected. Please check CSV format.");
+  return;
+}
+
     const headers = rows[hRow].map(h =>
       h.toLowerCase().replace(/\s+/g, "").replace(/[()₹]/g, "")
     );
@@ -531,6 +541,7 @@ function collapseAllOrderAdgroups() {
   document.querySelectorAll(".order-child-row")
     .forEach(r => r.style.display = "none");
 }
+
 
 
 
