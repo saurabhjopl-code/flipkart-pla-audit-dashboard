@@ -1,6 +1,6 @@
 /*************************************************
- * KEYWORD REPORTS — FINAL LOCKED VERSION
- * CORE TABS REMAIN UNTOUCHED
+ * KEYWORD REPORTS — FINAL EXTENDED VERSION
+ * CORE TABS REMAIN LOCKED
  *************************************************/
 
 function keywordSegmentByROI(roi) {
@@ -17,27 +17,25 @@ function num(v) {
 
 function generateKeywordReport() {
   const file = document.getElementById("keywordFile").files[0];
-  if (!file) {
-    alert("Please upload Keyword CSV");
-    return;
-  }
+  if (!file) return alert("Upload Keyword CSV");
 
   const reader = new FileReader();
   reader.onload = () => {
     const rows = parseCSV(reader.result);
 
-    /* Report period */
+    /* Report Period */
     const period = extractReportPeriod(rows);
-    document.getElementById("keywordPeriod").innerHTML =
+    keywordPeriod.innerHTML =
       `Report Period: <b>${period.start}</b> → <b>${period.end}</b>`;
 
-    /* Headers are FIXED at row 3 */
     const headers = rows[2];
     const data = rows.slice(3);
     const h = name => headers.indexOf(name);
 
     const idx = {
       keyword: h("attributed_keyword"),
+      views: h("Views"),
+      clicks: h("Clicks"),
       spend: h("SUM(cost)"),
       directUnits: h("Direct Units Sold"),
       indirectUnits: h("Indirect Units Sold"),
@@ -45,67 +43,116 @@ function generateKeywordReport() {
       indirectRevenue: h("Indirect Revenue")
     };
 
-    const keywordMap = {};
+    const kw = {};
     let totalSpend = 0;
     let totalRevenue = 0;
 
     data.forEach(r => {
-      const keyword = r[idx.keyword];
-      if (!keyword) return;
+      const k = r[idx.keyword];
+      if (!k) return;
 
       const spend = num(r[idx.spend]);
-      const units =
-        num(r[idx.directUnits]) + num(r[idx.indirectUnits]);
-      const revenue =
-        num(r[idx.directRevenue]) + num(r[idx.indirectRevenue]);
+      const views = num(r[idx.views]);
+      const clicks = num(r[idx.clicks]);
+      const du = num(r[idx.directUnits]);
+      const iu = num(r[idx.indirectUnits]);
+      const dr = num(r[idx.directRevenue]);
+      const ir = num(r[idx.indirectRevenue]);
+
+      const units = du + iu;
+      const revenue = dr + ir;
 
       totalSpend += spend;
       totalRevenue += revenue;
 
-      if (!keywordMap[keyword]) {
-        keywordMap[keyword] = { spend: 0, revenue: 0, units: 0 };
+      if (!kw[k]) {
+        kw[k] = { spend:0, revenue:0, units:0, views:0, clicks:0, dr:0, ir:0 };
       }
 
-      keywordMap[keyword].spend += spend;
-      keywordMap[keyword].revenue += revenue;
-      keywordMap[keyword].units += units;
+      Object.assign(kw[k], {
+        spend: kw[k].spend + spend,
+        revenue: kw[k].revenue + revenue,
+        units: kw[k].units + units,
+        views: kw[k].views + views,
+        clicks: kw[k].clicks + clicks,
+        dr: kw[k].dr + dr,
+        ir: kw[k].ir + ir
+      });
     });
 
-    /* Executive Summary */
-    document.getElementById("keywordExecutive").innerHTML = `
+    /* ========== Executive Summary ========== */
+    const topRevenue = Object.entries(kw)
+      .sort((a,b)=>b[1].revenue-a[1].revenue)
+      .slice(0,10)
+      .map(x=>x[0]).join(", ");
+
+    const topWaste = Object.entries(kw)
+      .filter(x=>x[1].spend>0 && x[1].units===0)
+      .sort((a,b)=>b[1].spend-a[1].spend)
+      .slice(0,10)
+      .map(x=>x[0]).join(", ");
+
+    keywordExecutive.innerHTML = `
       <div class="kpi">Total Spend<br>₹${totalSpend.toFixed(0)}</div>
       <div class="kpi">Total Revenue<br>₹${totalRevenue.toFixed(0)}</div>
-      <div class="kpi">Overall ROI<br>${(totalRevenue / totalSpend || 0).toFixed(2)}</div>
-      <div class="kpi">Keywords<br>${Object.keys(keywordMap).length}</div>
+      <div class="kpi">Overall ROI<br>${(totalRevenue/totalSpend||0).toFixed(2)}</div>
+      <div class="kpi">Top Revenue Keywords<br>${topRevenue || "-"}</div>
+      <div class="kpi">Top Waste Keywords<br>${topWaste || "-"}</div>
     `;
 
-    /* ROI-Based Keyword Segmentation (LOCKED & CORRECT) */
-    const segBody = document.querySelector("#kwSegment tbody");
-    segBody.innerHTML = "";
+    /* ========== ROI Segmentation (LOCKED) ========== */
+    kwSegment.querySelector("tbody").innerHTML =
+      Object.entries(kw).map(([k,v])=>{
+        const roi = v.spend ? v.revenue/v.spend : 0;
+        const [seg,act] = keywordSegmentByROI(roi);
+        return `<tr>
+          <td>${k}</td><td>${v.spend.toFixed(0)}</td>
+          <td>${v.revenue.toFixed(0)}</td><td>${v.units}</td>
+          <td>${roi.toFixed(2)}</td><td>${seg}</td><td>${act}</td>
+        </tr>`;
+      }).join("");
 
-    Object.entries(keywordMap).forEach(([k, v]) => {
-      const roi = v.spend ? v.revenue / v.spend : 0;
-      const [segment, action] = keywordSegmentByROI(roi);
+    /* ========== Direct vs Indirect Impact ========== */
+    kwAssist.querySelector("tbody").innerHTML =
+      Object.entries(kw).map(([k,v])=>{
+        const total = v.dr + v.ir;
+        const assist = total ? (v.ir/total)*100 : 0;
+        const role = assist>=50?"🤝 Assister":(v.dr/total)>=0.7?"🎯 Closer":"⚖ Balanced";
+        return `<tr>
+          <td>${k}</td><td>${v.dr.toFixed(0)}</td><td>${v.ir.toFixed(0)}</td>
+          <td>${total.toFixed(0)}</td><td>${assist.toFixed(1)}%</td><td>${role}</td>
+        </tr>`;
+      }).join("");
 
-      segBody.innerHTML += `
-        <tr>
-          <td>${k}</td>
-          <td>${v.spend.toFixed(0)}</td>
-          <td>${v.revenue.toFixed(0)}</td>
-          <td>${v.units}</td>
-          <td>${roi.toFixed(2)}</td>
-          <td>${segment}</td>
-          <td>${action}</td>
-        </tr>
-      `;
-    });
+    /* ========== Waste Analysis ========== */
+    kwWaste.querySelector("tbody").innerHTML =
+      Object.entries(kw).filter(([k,v])=>v.spend>0 && v.units===0)
+      .map(([k,v])=>`<tr>
+        <td>${k}</td><td>${v.spend.toFixed(0)}</td>
+        <td>${v.clicks}</td><td>${v.units}</td>
+        <td>${v.revenue.toFixed(0)}</td>
+        <td>Hard Waste</td><td>Pause</td>
+      </tr>`).join("");
 
-    /* Trend reports — NOT POSSIBLE (NO DATE COLUMN) */
-    document.querySelector("#kwDay tbody").innerHTML =
-      `<tr><td colspan="5">Trend not available — Date column not present in this report</td></tr>`;
+    /* ========== Funnel Health ========== */
+    kwFunnel.querySelector("tbody").innerHTML =
+      Object.entries(kw).map(([k,v])=>{
+        const ctr = v.views ? (v.clicks/v.views)*100 : 0;
+        const cvr = v.clicks ? (v.units/v.clicks)*100 : 0;
+        let d="Healthy";
+        if(v.views>1000 && ctr<1) d="Low Relevance";
+        else if(ctr>3 && cvr<5) d="Conversion Issue";
+        return `<tr>
+          <td>${k}</td><td>${v.views}</td>
+          <td>${ctr.toFixed(2)}%</td><td>${cvr.toFixed(2)}%</td><td>${d}</td>
+        </tr>`;
+      }).join("");
 
-    document.querySelector("#kwWeek tbody").innerHTML =
-      `<tr><td colspan="5">Trend not available — Date column not present in this report</td></tr>`;
+    /* ========== Trend (Not Available) ========== */
+    kwDay.querySelector("tbody").innerHTML =
+      `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
+    kwWeek.querySelector("tbody").innerHTML =
+      `<tr><td colspan="5">Trend not available — Date column not present</td></tr>`;
   };
 
   reader.readAsText(file);
