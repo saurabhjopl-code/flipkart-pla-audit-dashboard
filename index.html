@@ -18,37 +18,146 @@
   <button class="tab-btn" data-tab="campaignOrder">Campaign Order Report</button>
   <button class="tab-btn" data-tab="traffic">Traffic Report - DO NOT USE</button>
 
-  <!-- ===== ADDITION ONLY: Advanced Daily Report TAB ===== -->
+  <!-- ===== ADDITION (PHASE 1) ===== -->
   <button class="tab-btn" data-tab="advancedDaily">Advanced Daily Report</button>
 </div>
 
 <!-- ================= CAMPAIGN ORDER REPORT (ISOLATED) ================= -->
 <section id="campaignOrder" class="tab-content">
-  <!-- EXISTING CONTENT UNCHANGED -->
+
+  <h3>Campaign Order Report</h3>
+
+  <input type="file" id="campaignOrderFile" accept=".csv">
+  <button onclick="generateCampaignOrderReport()">Generate Report</button>
+
+  <h4>Campaign Summary</h4>
+  <table id="corCampaignTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Campaign → FSN Performance</h4>
+  <table id="corFsnTable">
+    <thead>
+      <tr>
+        <th>Campaign / Advertised FSN</th>
+        <th>Orders</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Order Date Trend</h4>
+  <table id="corDateTable">
+    <thead>
+      <tr>
+        <th>Order Date</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Direct vs Indirect Impact</h4>
+
+  <h5>Campaign Level</h5>
+  <table id="diCampaignTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Assist %</th>
+        <th>Direct Revenue (₹)</th>
+        <th>Indirect Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h5>FSN Level</h5>
+  <table id="diFsnTable">
+    <thead>
+      <tr>
+        <th>Advertised FSN ID</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Assist %</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Day-of-Week Impact</h4>
+  <table id="dowTable">
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Assist %</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Cannibalization Risk Flags</h4>
+  <table id="cannibalTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Assist %</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Revenue (₹)</th>
+        <th>Risk Flag</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
 </section>
 
 <!-- ================= DAILY REPORT ================= -->
 <section id="campaign" class="tab-content active">
-  <!-- EXISTING CONTENT UNCHANGED -->
+  <!-- 🔒 UNCHANGED CONTENT (AS IN YOUR FILE) -->
 </section>
 
 <!-- ================= PLACEMENT ================= -->
 <section id="placement" class="tab-content">
-  <!-- EXISTING CONTENT UNCHANGED -->
+  <!-- 🔒 UNCHANGED CONTENT -->
 </section>
 
 <!-- ================= TRAFFIC ================= -->
 <section id="traffic" class="tab-content">
-  <!-- EXISTING CONTENT UNCHANGED -->
+  <!-- 🔒 UNCHANGED CONTENT -->
 </section>
 
-<!-- ================= KEYWORD ================= -->
 <section id="keyword" class="tab-content">
-  <!-- EXISTING CONTENT UNCHANGED -->
+  <!-- 🔒 UNCHANGED CONTENT -->
 </section>
 
 <!-- =====================================================
-     ADDITION ONLY: ADVANCED DAILY REPORT (PHASE 1)
+     ADDITION (PHASE 1): ADVANCED DAILY REPORT
      ===================================================== -->
 <section id="advancedDaily" class="tab-content">
 
@@ -110,7 +219,7 @@
 <script src="keyword.js"></script>
 <script src="campaign-order.js"></script>
 
-<!-- ===== ADDITION ONLY: Advanced Daily Report JS ===== -->
+<!-- ===== ADDITION (PHASE 1) ===== -->
 <script src="advanced-daily-report.js"></script>
 
 </body>
