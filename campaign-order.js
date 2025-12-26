@@ -223,6 +223,40 @@ function generateCampaignOrderReport() {
     });
 
     const diFsnBody=document.querySelector("#diFsnTable tbody");
+    /* ===== PATCH 2: FSN Level – Top 20 toggle ===== */
+
+const diFsnBody = document.querySelector("#diFsnTable tbody");
+const fsnRows = Array.from(diFsnBody.querySelectorAll("tr"));
+
+fsnRows.forEach((row, index) => {
+  if (index >= 20) row.classList.add("hidden", "fsn-extra");
+});
+
+/* Controls (create once) */
+if (!document.getElementById("fsnToggleControls")) {
+  const controls = document.createElement("div");
+  controls.id = "fsnToggleControls";
+  controls.style.margin = "8px 0";
+
+  controls.innerHTML = `
+    <button id="showTop20Fsn">Show Top 20</button>
+    <button id="showAllFsn">Show All FSN</button>
+  `;
+
+  document
+    .getElementById("diFsnTable")
+    .parentNode
+    .insertBefore(controls, document.getElementById("diFsnTable"));
+}
+
+document.getElementById("showAllFsn").onclick = () =>
+  document.querySelectorAll(".fsn-extra")
+    .forEach(r => r.classList.remove("hidden"));
+
+document.getElementById("showTop20Fsn").onclick = () =>
+  document.querySelectorAll(".fsn-extra")
+    .forEach(r => r.classList.add("hidden"));
+
     diFsnBody.innerHTML="";
 
     Object.entries(campaignMap).forEach(([_,v])=>{
@@ -283,3 +317,33 @@ function generateCampaignOrderReport() {
 
   reader.readAsText(fileInput.files[0]);
 }
+/* ===== PATCH 1: Campaign → FSN expand / collapse (event delegation) ===== */
+
+const corFsnTable = document.getElementById("corFsnTable");
+
+if (corFsnTable && !corFsnTable.dataset.bound) {
+  corFsnTable.dataset.bound = "true";
+
+  corFsnTable.addEventListener("click", function (e) {
+    const campaignRow = e.target.closest("tr[data-group]");
+    if (!campaignRow) return;
+
+    const groupId = campaignRow.dataset.group;
+    const fsnRows = corFsnTable.querySelectorAll(
+      `tr[data-parent="${groupId}"]`
+    );
+
+    if (!fsnRows.length) return;
+
+    const isCollapsed = fsnRows[0].classList.contains("hidden");
+
+    fsnRows.forEach(row =>
+      row.classList.toggle("hidden", !isCollapsed)
+    );
+
+    const firstCell = campaignRow.querySelector("td");
+    firstCell.textContent =
+      (isCollapsed ? "▼ " : "▶ ") + firstCell.textContent.slice(2);
+  });
+}
+
