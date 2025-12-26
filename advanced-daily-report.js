@@ -1,18 +1,17 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 6E (FINAL)
- * Ads Type default sorting by Spend (High → Low)
+ * ADVANCED DAILY REPORT — INSIGHT FLAGS
+ * Low CTR & High Spend No Sales
  *************************************************/
 
 (function () {
 
   const plaInput = document.getElementById("adrPlaFile");
   const pcaInput = document.getElementById("adrPcaFile");
-  const fsnInput = document.getElementById("adrFsnFile");
   const generateBtn = document.getElementById("adrGenerateBtn");
   const container = document.getElementById("advancedDaily");
 
-  let plaRows = [], pcaRows = [], fsnRows = [];
-  let hasPLA = false, hasPCA = false, hasFSN = false;
+  let plaRows = [], pcaRows = [];
+  let hasPLA = false, hasPCA = false;
   let reportStartDate = null, reportEndDate = null;
 
   /* ================= HELPERS ================= */
@@ -63,6 +62,27 @@
     container.appendChild(div);
   }
 
+  function auditRemark(roi) {
+    if (roi >= 5) return "🟢 Scale";
+    if (roi >= 3) return "🟠 Optimize";
+    return "🔴 Loss";
+  }
+
+  function insightFlags(v) {
+    const flags = [];
+    const ctr = v.views ? (v.clicks / v.views) * 100 : 0;
+
+    if (ctr < 0.5 && v.views > 100) {
+      flags.push("⚠ Low CTR");
+    }
+
+    if (v.spend > 1000 && v.units === 0) {
+      flags.push("🚨 High Spend – No Sales");
+    }
+
+    return flags.join(" | ") || "—";
+  }
+
   /* ================= FILE LOAD ================= */
 
   plaInput.onchange = async () => {
@@ -77,11 +97,6 @@
     hasPCA = pcaRows.length > 3;
   };
 
-  fsnInput.onchange = async () => {
-    fsnRows = parseCSV(await fsnInput.files[0].text());
-    hasFSN = fsnRows.length > 3;
-  };
-
   /* ================= GENERATE ================= */
 
   generateBtn.onclick = () => {
@@ -93,20 +108,13 @@
     clearOldTables();
     renderDateRange();
 
-    renderAdsTypeReport();
-  };
+    const campaignMap = {};
 
-  /* ================= ADS TYPE REPORT ================= */
-
-  function renderAdsTypeReport() {
-    const data = {
-      PLA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 },
-      PCA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 }
-    };
-
+    /* ===== PLA ===== */
     if (hasPLA) {
       const h = plaRows[2].map(normalize);
       const idx = {
+        campaign: h.indexOf("campaign name"),
         views: h.indexOf("views"),
         clicks: h.indexOf("clicks"),
         spend: h.indexOf("ad spend"),
@@ -115,17 +123,26 @@
       };
 
       plaRows.slice(3).forEach(r => {
-        data.PLA.views += toNum(r[idx.views]);
-        data.PLA.clicks += toNum(r[idx.clicks]);
-        data.PLA.spend += toNum(r[idx.spend]);
-        data.PLA.units += toNum(r[idx.units]);
-        data.PLA.revenue += toNum(r[idx.revenue]);
+        const c = r[idx.campaign];
+        if (!c) return;
+
+        if (!campaignMap[c]) {
+          campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
+        }
+
+        campaignMap[c].views += toNum(r[idx.views]);
+        campaignMap[c].clicks += toNum(r[idx.clicks]);
+        campaignMap[c].spend += toNum(r[idx.spend]);
+        campaignMap[c].units += toNum(r[idx.units]);
+        campaignMap[c].revenue += toNum(r[idx.revenue]);
       });
     }
 
+    /* ===== PCA ===== */
     if (hasPCA) {
       const h = pcaRows[2].map(normalize);
       const idx = {
+        campaign: h.indexOf("campaign_name"),
         views: h.indexOf("views"),
         clicks: h.indexOf("clicks"),
         spend: h.indexOf("banner_group_spend"),
@@ -136,33 +153,43 @@
       };
 
       pcaRows.slice(3).forEach(r => {
-        data.PCA.views += toNum(r[idx.views]);
-        data.PCA.clicks += toNum(r[idx.clicks]);
-        data.PCA.spend += toNum(r[idx.spend]);
-        data.PCA.units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-        data.PCA.revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
+        const c = r[idx.campaign];
+        if (!c) return;
+
+        if (!campaignMap[c]) {
+          campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
+        }
+
+        campaignMap[c].views += toNum(r[idx.views]);
+        campaignMap[c].clicks += toNum(r[idx.clicks]);
+        campaignMap[c].spend += toNum(r[idx.spend]);
+        campaignMap[c].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+        campaignMap[c].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
       });
     }
 
-    renderAdsTypeTable(data);
-  }
+    renderCampaignAudit(campaignMap);
+  };
 
-  function renderAdsTypeTable(data) {
+  /* ================= RENDER ================= */
+
+  function renderCampaignAudit(data) {
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>Ads Type Performance</h4>`;
+    wrap.innerHTML = `<h4>Campaign Performance, Audit & Insights</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
-          <th>Ads Type</th>
+          <th>Campaign</th>
           <th>Views</th>
           <th>Clicks</th>
-          <th>Spend (₹)</th>
           <th>Units</th>
           <th>Revenue (₹)</th>
           <th>ROI</th>
+          <th>Audit Remark</th>
+          <th>Insight Flags</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -171,18 +198,22 @@
     const tbody = table.querySelector("tbody");
 
     Object.entries(data)
-      .sort((a, b) => b[1].spend - a[1].spend) // ✅ Spend High → Low
-      .forEach(([t, v]) => {
-        const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
+      .map(([k, v]) => {
+        const roi = v.spend ? v.revenue / v.spend : 0;
+        return { campaign: k, ...v, roi };
+      })
+      .sort((a, b) => b.roi - a.roi)
+      .forEach(v => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${t}</td>
+          <td>${v.campaign}</td>
           <td>${v.views}</td>
           <td>${v.clicks}</td>
-          <td>${v.spend.toFixed(2)}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(2)}</td>
-          <td>${roi}</td>
+          <td>${v.roi.toFixed(2)}</td>
+          <td>${auditRemark(v.roi)}</td>
+          <td>${insightFlags(v)}</td>
         `;
         tbody.appendChild(tr);
       });
