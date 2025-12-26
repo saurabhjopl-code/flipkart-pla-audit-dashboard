@@ -1,87 +1,71 @@
-/*************************************************
- * ADVANCED DAILY REPORT – PHASE 1
- * UI + Validation + Availability Wiring
- *************************************************/
+// ===============================
+// Advanced Daily Report – Phase 1
+// UI + Validation Wiring ONLY
+// ===============================
 
-const ADR = { pla: null, pca: null, fsn: null };
+(function () {
+  const plaInput = document.getElementById("plaFile");
+  const pcaInput = document.getElementById("pcaFile");
+  const fsnInput = document.getElementById("fsnFile");
 
-document.addEventListener("change", () => {
-  ADR.pla = document.getElementById("adrPlaFile")?.files[0] || null;
-  ADR.pca = document.getElementById("adrPcaFile")?.files[0] || null;
-  ADR.fsn = document.getElementById("adrFsnFile")?.files[0] || null;
+  const statusPLA = document.getElementById("status-pla");
+  const statusPCA = document.getElementById("status-pca");
+  const statusFSN = document.getElementById("status-fsn");
 
-  updateStatus("adrPlaFile", "adrPlaStatus");
-  updateStatus("adrPcaFile", "adrPcaStatus");
-  updateStatus("adrFsnFile", "adrFsnStatus");
+  const availCampaign = document.getElementById("avail-campaign");
+  const availCategory = document.getElementById("avail-category");
+  const availAdsType = document.getElementById("avail-adstype");
+  const availPLADate = document.getElementById("avail-pla-date");
+  const availPCADate = document.getElementById("avail-pca-date");
+  const availDailyWeekly = document.getElementById("avail-daily-weekly");
 
-  document.getElementById("adrGenerateBtn").disabled = !(ADR.pla || ADR.pca);
-});
+  let hasPLA = false;
+  let hasPCA = false;
+  let hasFSN = false;
 
-function updateStatus(inputId, statusId) {
-  const input = document.getElementById(inputId);
-  const status = document.getElementById(statusId);
-  if (input?.files.length) {
-    status.textContent = "✓ " + input.files[0].name;
-  } else {
-    status.textContent = "";
+  function updateStatus() {
+    statusPLA.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
+    statusPCA.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
+    statusFSN.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
+
+    // Campaign Report
+    availCampaign.textContent =
+      hasPLA || hasPCA ? "Partial" : "Blocked";
+
+    // Category-wise
+    availCategory.textContent =
+      hasFSN ? "Available" : "Blocked";
+
+    // Ads Type
+    availAdsType.textContent =
+      hasPLA || hasPCA ? "Partial" : "Blocked";
+
+    // PLA Date-wise
+    availPLADate.textContent =
+      hasPLA ? "Available" : "Hidden";
+
+    // PCA Date-wise
+    availPCADate.textContent =
+      hasPCA ? "Available" : "Hidden";
+
+    // Daily & Weekly
+    availDailyWeekly.textContent =
+      hasPLA || hasPCA || hasFSN ? "Partial" : "Blocked";
   }
-}
 
-document.getElementById("adrGenerateBtn").addEventListener("click", () => {
-  clearTables();
-  applyRules();
-});
+  plaInput.addEventListener("change", function () {
+    hasPLA = !!plaInput.files.length;
+    updateStatus();
+  });
 
-function clearTables() {
-  document
-    .querySelectorAll("#advancedDaily table tbody")
-    .forEach(tb => tb.innerHTML = "");
-}
+  pcaInput.addEventListener("change", function () {
+    hasPCA = !!pcaInput.files.length;
+    updateStatus();
+  });
 
-function applyRules() {
+  fsnInput.addEventListener("change", function () {
+    hasFSN = !!fsnInput.files.length;
+    updateStatus();
+  });
 
-  // Campaign Report – always visible
-  mark("adrCampaignTable");
-
-  // Category-wise
-  if (!ADR.fsn) {
-    block("adrCategoryTable", "Data Not Provided – FSN missing");
-  } else {
-    mark("adrCategoryTable");
-  }
-
-  // Ads Type – always visible
-  mark("adrAdsTypeTable");
-
-  // PLA Date-wise
-  if (!ADR.pla) hide("adrPlaDateSection");
-  else show("adrPlaDateSection");
-
-  // PCA Date-wise
-  if (!ADR.pca) hide("adrPcaDateSection");
-  else show("adrPcaDateSection");
-
-  // Daily & Weekly
-  mark("adrDailyTable");
-  mark("adrWeeklyTable");
-}
-
-function block(id, msg) {
-  const tb = document.querySelector(`#${id} tbody`);
-  tb.innerHTML = `<tr><td style="color:red;font-weight:600;">${msg}</td></tr>`;
-}
-
-function mark(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.opacity = "1";
-}
-
-function hide(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "none";
-}
-
-function show(id) {
-  const el = document.getElementById(id);
-  if (el) el.style.display = "block";
-}
+})();
