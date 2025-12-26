@@ -142,7 +142,12 @@
   <h3>Daily Report</h3>
   <div id="reportPeriod" class="report-period"></div>
 
-  <input type="file" id="campaignFile" accept=".csv">
+  <input type="file" id="plaFile" accept=".csv" />
+  <input type="file" id="pcaFile" accept=".csv" />
+  <input type="file" id="fsnFile" accept=".csv" />
+
+<button id="generateDailyReport">Generate Daily Report</button>
+
   <button onclick="generateCampaign()">Generate Report</button>
 
   <div id="campaignKpi" class="kpis"></div>
@@ -389,6 +394,7 @@
 <script src="campaign-order.js"></script>  
 </body>
 </html>
+
 
 
 
