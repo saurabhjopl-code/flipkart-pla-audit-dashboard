@@ -254,35 +254,3 @@ tr.hidden-row { display: none !important; }
 .hidden {
   display: none !important;
 }
-
-.daily-upload-section {
-  display: flex;
-  gap: 20px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.upload-block {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.hint {
-  font-size: 12px;
-  color: #666;
-}
-
-.file-status {
-  font-size: 12px;
-  color: green;
-}
-
-.file-status.error {
-  color: #c0392b;
-}
-
-#generateDailyReport:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
