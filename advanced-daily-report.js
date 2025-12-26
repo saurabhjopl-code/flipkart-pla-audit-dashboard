@@ -1,20 +1,29 @@
 /*************************************************
- * ADVANCED DAILY REPORT — INSIGHT FLAGS
- * Low CTR & High Spend No Sales
+ * ADVANCED DAILY REPORT — FINAL FIX
+ * Restores file status wiring + insights
  *************************************************/
 
 (function () {
 
+  /* ========= ELEMENT REFERENCES ========= */
+
   const plaInput = document.getElementById("adrPlaFile");
   const pcaInput = document.getElementById("adrPcaFile");
+  const fsnInput = document.getElementById("adrFsnFile");
   const generateBtn = document.getElementById("adrGenerateBtn");
   const container = document.getElementById("advancedDaily");
 
-  let plaRows = [], pcaRows = [];
-  let hasPLA = false, hasPCA = false;
+  const sPla = document.getElementById("adrStatusPla");
+  const sPca = document.getElementById("adrStatusPca");
+  const sFsn = document.getElementById("adrStatusFsn");
+
+  /* ========= STATE ========= */
+
+  let plaRows = [], pcaRows = [], fsnRows = [];
+  let hasPLA = false, hasPCA = false, hasFSN = false;
   let reportStartDate = null, reportEndDate = null;
 
-  /* ================= HELPERS ================= */
+  /* ========= HELPERS ========= */
 
   function parseCSV(text) {
     const rows = [];
@@ -40,13 +49,19 @@
     return Number(String(v).replace(/[^0-9.-]/g, "")) || 0;
   }
 
+  function extractDateRange(rows) {
+    reportStartDate = rows?.[0]?.[0] || null;
+    reportEndDate = rows?.[1]?.[0] || null;
+  }
+
   function clearOldTables() {
     container.querySelectorAll(".adr-generated").forEach(e => e.remove());
   }
 
-  function extractDateRange(rows) {
-    reportStartDate = rows?.[0]?.[0] || null;
-    reportEndDate = rows?.[1]?.[0] || null;
+  function refreshStatus() {
+    sPla.innerHTML = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
+    sPca.innerHTML = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
+    sFsn.innerHTML = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
   }
 
   function renderDateRange() {
@@ -72,32 +87,35 @@
     const flags = [];
     const ctr = v.views ? (v.clicks / v.views) * 100 : 0;
 
-    if (ctr < 0.5 && v.views > 100) {
-      flags.push("⚠ Low CTR");
-    }
-
-    if (v.spend > 1000 && v.units === 0) {
-      flags.push("🚨 High Spend – No Sales");
-    }
+    if (ctr < 0.5 && v.views > 100) flags.push("⚠ Low CTR");
+    if (v.spend > 1000 && v.units === 0) flags.push("🚨 High Spend – No Sales");
 
     return flags.join(" | ") || "—";
   }
 
-  /* ================= FILE LOAD ================= */
+  /* ========= FILE LOAD ========= */
 
   plaInput.onchange = async () => {
     plaRows = parseCSV(await plaInput.files[0].text());
     extractDateRange(plaRows);
     hasPLA = plaRows.length > 3;
+    refreshStatus();
   };
 
   pcaInput.onchange = async () => {
     pcaRows = parseCSV(await pcaInput.files[0].text());
     extractDateRange(pcaRows);
     hasPCA = pcaRows.length > 3;
+    refreshStatus();
   };
 
-  /* ================= GENERATE ================= */
+  fsnInput.onchange = async () => {
+    fsnRows = parseCSV(await fsnInput.files[0].text());
+    hasFSN = fsnRows.length > 3;
+    refreshStatus();
+  };
+
+  /* ========= GENERATE ========= */
 
   generateBtn.onclick = () => {
     if (!hasPLA && !hasPCA) {
@@ -125,11 +143,9 @@
       plaRows.slice(3).forEach(r => {
         const c = r[idx.campaign];
         if (!c) return;
-
         if (!campaignMap[c]) {
           campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
         }
-
         campaignMap[c].views += toNum(r[idx.views]);
         campaignMap[c].clicks += toNum(r[idx.clicks]);
         campaignMap[c].spend += toNum(r[idx.spend]);
@@ -155,11 +171,9 @@
       pcaRows.slice(3).forEach(r => {
         const c = r[idx.campaign];
         if (!c) return;
-
         if (!campaignMap[c]) {
           campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
         }
-
         campaignMap[c].views += toNum(r[idx.views]);
         campaignMap[c].clicks += toNum(r[idx.clicks]);
         campaignMap[c].spend += toNum(r[idx.spend]);
@@ -171,7 +185,7 @@
     renderCampaignAudit(campaignMap);
   };
 
-  /* ================= RENDER ================= */
+  /* ========= RENDER ========= */
 
   function renderCampaignAudit(data) {
     const wrap = document.createElement("div");
@@ -198,10 +212,7 @@
     const tbody = table.querySelector("tbody");
 
     Object.entries(data)
-      .map(([k, v]) => {
-        const roi = v.spend ? v.revenue / v.spend : 0;
-        return { campaign: k, ...v, roi };
-      })
+      .map(([k, v]) => ({ campaign: k, ...v, roi: v.spend ? v.revenue / v.spend : 0 }))
       .sort((a, b) => b.roi - a.roi)
       .forEach(v => {
         const tr = document.createElement("tr");
