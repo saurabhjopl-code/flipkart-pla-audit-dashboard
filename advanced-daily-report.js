@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 6B
- * Category-wise Report (AdGroup Name from FSN)
+ * ADVANCED DAILY REPORT — PHASE 6C + 6D
+ * PLA & PCA Date-wise Performance
  *************************************************/
 
 (function () {
@@ -63,12 +63,6 @@
     container.appendChild(div);
   }
 
-  function auditRemark(roi) {
-    if (roi >= 5) return "🟢 Scale";
-    if (roi >= 3) return "🟠 Optimize";
-    return "🔴 Loss";
-  }
-
   /* ================= FILE LOAD ================= */
 
   plaInput.onchange = async () => {
@@ -85,83 +79,108 @@
 
   fsnInput.onchange = async () => {
     fsnRows = parseCSV(await fsnInput.files[0].text());
-    extractDateRange(fsnRows);
     hasFSN = fsnRows.length > 3;
   };
 
   /* ================= GENERATE ================= */
 
   generateBtn.onclick = () => {
-    if (!hasFSN) {
-      alert("Upload Consolidated FSN Report to generate Category-wise report");
+    if (!hasPLA && !hasPCA) {
+      alert("Upload PLA or PCA file");
       return;
     }
 
     clearOldTables();
     renderDateRange();
 
-    renderCategoryReport();
+    if (hasPLA) renderPlaDateWise();
+    if (hasPCA) renderPcaDateWise();
   };
 
-  /* ================= CATEGORY REPORT ================= */
+  /* ================= PLA DATE-WISE ================= */
 
-  function renderCategoryReport() {
-    const h = fsnRows[2].map(normalize);
+  function renderPlaDateWise() {
+    const h = plaRows[2].map(normalize);
     const idx = {
-      category: h.indexOf("adgroup name"),
+      date: h.indexOf("date"),
       views: h.indexOf("views"),
       clicks: h.indexOf("clicks"),
-      dUnits: h.indexOf("direct units sold"),
-      iUnits: h.indexOf("indirect units sold"),
-      revenue: h.indexOf("total revenue (rs.)"),
-      roi: h.indexOf("roi")
+      spend: h.indexOf("ad spend"),
+      units: h.indexOf("total converted units"),
+      revenue: h.indexOf("total revenue (rs.)")
     };
 
     const map = {};
 
-    fsnRows.slice(3).forEach(r => {
-      const cat = r[idx.category];
-      if (!cat) return;
+    plaRows.slice(3).forEach(r => {
+      const d = r[idx.date];
+      if (!d) return;
 
-      if (!map[cat]) {
-        map[cat] = {
-          category: cat,
-          views: 0,
-          clicks: 0,
-          units: 0,
-          revenue: 0,
-          spend: 0
-        };
+      if (!map[d]) {
+        map[d] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
       }
 
-      const views = toNum(r[idx.views]);
-      const clicks = toNum(r[idx.clicks]);
-      const units = toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-      const revenue = toNum(r[idx.revenue]);
-      const roiVal = toNum(r[idx.roi]);
-
-      map[cat].views += views;
-      map[cat].clicks += clicks;
-      map[cat].units += units;
-      map[cat].revenue += revenue;
-
-      if (roiVal > 0) {
-        map[cat].spend += revenue / roiVal;
-      }
+      map[d].views += toNum(r[idx.views]);
+      map[d].clicks += toNum(r[idx.clicks]);
+      map[d].spend += toNum(r[idx.spend]);
+      map[d].units += toNum(r[idx.units]);
+      map[d].revenue += toNum(r[idx.revenue]);
     });
 
+    renderDateTable("PLA Performance – Date-wise", map);
+  }
+
+  /* ================= PCA DATE-WISE ================= */
+
+  function renderPcaDateWise() {
+    const h = pcaRows[2].map(normalize);
+    const idx = {
+      date: h.indexOf("date"),
+      views: h.indexOf("views"),
+      clicks: h.indexOf("clicks"),
+      spend: h.indexOf("banner_group_spend"),
+      dUnits: h.indexOf("direct units"),
+      iUnits: h.indexOf("indirect units"),
+      dRev: h.indexOf("direct revenue"),
+      iRev: h.indexOf("indirect revenue")
+    };
+
+    const map = {};
+
+    pcaRows.slice(3).forEach(r => {
+      const d = r[idx.date];
+      if (!d) return;
+
+      if (!map[d]) {
+        map[d] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
+      }
+
+      map[d].views += toNum(r[idx.views]);
+      map[d].clicks += toNum(r[idx.clicks]);
+      map[d].spend += toNum(r[idx.spend]);
+      map[d].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+      map[d].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
+    });
+
+    renderDateTable("PCA Performance – Date-wise", map);
+  }
+
+  /* ================= COMMON DATE TABLE ================= */
+
+  function renderDateTable(title, data) {
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>Category Performance (AdGroup Name)</h4>`;
+    wrap.innerHTML = `<h4>${title}</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
-          <th>Category</th>
+          <th>Date</th>
           <th>Views</th>
           <th>Clicks</th>
-          <th>Total Units</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
           <th>Revenue (₹)</th>
           <th>ROI</th>
         </tr>
@@ -171,21 +190,19 @@
 
     const tbody = table.querySelector("tbody");
 
-    Object.values(map)
-      .map(v => ({
-        ...v,
-        roi: v.spend ? v.revenue / v.spend : 0
-      }))
-      .sort((a, b) => a.category.localeCompare(b.category)) // A → Z
-      .forEach(v => {
+    Object.entries(data)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([d, v]) => {
+        const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${v.category}</td>
+          <td>${d}</td>
           <td>${v.views}</td>
           <td>${v.clicks}</td>
+          <td>${v.spend.toFixed(2)}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(2)}</td>
-          <td>${v.roi.toFixed(2)}</td>
+          <td>${roi}</td>
         `;
         tbody.appendChild(tr);
       });
