@@ -1,18 +1,17 @@
 /*************************************************
  * ADVANCED DAILY REPORT — PHASE 1
- * UI + VALIDATION ONLY
- * SAFE & ISOLATED
+ * UI + VALIDATION ONLY (NO DATA LOGIC)
  *************************************************/
 
 (function () {
 
-  const plaInput = document.getElementById("adrPlaFile");
-  const pcaInput = document.getElementById("adrPcaFile");
-  const fsnInput = document.getElementById("adrFsnFile");
+  const pla = document.getElementById("adrPlaFile");
+  const pca = document.getElementById("adrPcaFile");
+  const fsn = document.getElementById("adrFsnFile");
 
-  const sPLA = document.getElementById("adrStatusPla");
-  const sPCA = document.getElementById("adrStatusPca");
-  const sFSN = document.getElementById("adrStatusFsn");
+  const sPla = document.getElementById("adrStatusPla");
+  const sPca = document.getElementById("adrStatusPca");
+  const sFsn = document.getElementById("adrStatusFsn");
 
   const aCampaign = document.getElementById("adrAvailCampaign");
   const aCategory = document.getElementById("adrAvailCategory");
@@ -25,42 +24,33 @@
   let hasPCA = false;
   let hasFSN = false;
 
-  function updateUI() {
-    sPLA.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
-    sPCA.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
-    sFSN.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
+  function refresh() {
+    sPla.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
+    sPca.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
+    sFsn.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
 
-    // Campaign Report
     aCampaign.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
-
-    // Category-wise
     aCategory.textContent = hasFSN ? "Available" : "Blocked";
-
-    // Ads Type
     aAdsType.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
-
-    // Date-wise visibility
     aPlaDate.textContent = hasPLA ? "Available" : "Hidden";
     aPcaDate.textContent = hasPCA ? "Available" : "Hidden";
-
-    // Daily & Weekly
     aDailyWeekly.textContent =
       (hasPLA || hasPCA || hasFSN) ? "Partial" : "Blocked";
   }
 
-  plaInput.addEventListener("change", () => {
-    hasPLA = plaInput.files.length > 0;
-    updateUI();
+  pla.addEventListener("change", () => {
+    hasPLA = pla.files.length > 0;
+    refresh();
   });
 
-  pcaInput.addEventListener("change", () => {
-    hasPCA = pcaInput.files.length > 0;
-    updateUI();
+  pca.addEventListener("change", () => {
+    hasPCA = pca.files.length > 0;
+    refresh();
   });
 
-  fsnInput.addEventListener("change", () => {
-    hasFSN = fsnInput.files.length > 0;
-    updateUI();
+  fsn.addEventListener("change", () => {
+    hasFSN = fsn.files.length > 0;
+    refresh();
   });
 
 })();
