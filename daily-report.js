@@ -7,10 +7,7 @@ document.getElementById("generateDailyReport")
   ?.addEventListener("click", generateDailyReport);
 
 function generateDailyReport() {
-  const plaFile = document.getElementById("plaFile")?.files[0] || null;
-  const pcaFile = document.getElementById("pcaFile")?.files[0] || null;
-  const fsnFile = document.getElementById("fsnFile")?.files[0] || null;
-
+  
   if (!plaFile && !pcaFile && !fsnFile) {
     alert("Please upload at least one file");
     return;
@@ -234,4 +231,44 @@ pcaInput.addEventListener("change", () => {
 
 fsnInput.addEventListener("change", () => {
   updateStatus(fsnInput, document.getElementById("fsnStatus"));
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const plaInput = document.getElementById("plaFile");
+  const pcaInput = document.getElementById("pcaFile");
+  const fsnInput = document.getElementById("fsnFile");
+  const generateBtn = document.getElementById("generateDailyReport");
+
+  if (!generateBtn) return;
+
+  function updateStatus(input, statusEl) {
+    if (input && input.files && input.files.length) {
+      statusEl.textContent = "✓ " + input.files[0].name;
+      statusEl.classList.remove("error");
+    } else if (statusEl) {
+      statusEl.textContent = "";
+    }
+  }
+
+  function validateGenerateButton() {
+    generateBtn.disabled = !(
+      (plaInput && plaInput.files.length) ||
+      (pcaInput && pcaInput.files.length)
+    );
+  }
+
+  plaInput?.addEventListener("change", () => {
+    updateStatus(plaInput, document.getElementById("plaStatus"));
+    validateGenerateButton();
+  });
+
+  pcaInput?.addEventListener("change", () => {
+    updateStatus(pcaInput, document.getElementById("pcaStatus"));
+    validateGenerateButton();
+  });
+
+  fsnInput?.addEventListener("change", () => {
+    updateStatus(fsnInput, document.getElementById("fsnStatus"));
+  });
 });
