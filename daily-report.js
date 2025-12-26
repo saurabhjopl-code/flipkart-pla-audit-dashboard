@@ -203,3 +203,35 @@ function buildDateWiseReport(type, src) {
   });
 }
 
+const plaInput = document.getElementById("plaFile");
+const pcaInput = document.getElementById("pcaFile");
+const fsnInput = document.getElementById("fsnFile");
+const generateBtn = document.getElementById("generateDailyReport");
+
+function updateStatus(input, statusEl) {
+  if (input.files.length) {
+    statusEl.textContent = "✓ " + input.files[0].name;
+    statusEl.classList.remove("error");
+  } else {
+    statusEl.textContent = "";
+  }
+}
+
+function validateGenerateButton() {
+  // Enable if at least one ads file (PLA or PCA) is uploaded
+  generateBtn.disabled = !(plaInput.files.length || pcaInput.files.length);
+}
+
+plaInput.addEventListener("change", () => {
+  updateStatus(plaInput, document.getElementById("plaStatus"));
+  validateGenerateButton();
+});
+
+pcaInput.addEventListener("change", () => {
+  updateStatus(pcaInput, document.getElementById("pcaStatus"));
+  validateGenerateButton();
+});
+
+fsnInput.addEventListener("change", () => {
+  updateStatus(fsnInput, document.getElementById("fsnStatus"));
+});
