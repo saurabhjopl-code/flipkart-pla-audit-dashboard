@@ -1,71 +1,66 @@
-// ===============================
-// Advanced Daily Report – Phase 1
-// UI + Validation Wiring ONLY
-// ===============================
+/*************************************************
+ * ADVANCED DAILY REPORT — PHASE 1
+ * UI + VALIDATION ONLY
+ * SAFE & ISOLATED
+ *************************************************/
 
 (function () {
-  const plaInput = document.getElementById("plaFile");
-  const pcaInput = document.getElementById("pcaFile");
-  const fsnInput = document.getElementById("fsnFile");
 
-  const statusPLA = document.getElementById("status-pla");
-  const statusPCA = document.getElementById("status-pca");
-  const statusFSN = document.getElementById("status-fsn");
+  const plaInput = document.getElementById("adrPlaFile");
+  const pcaInput = document.getElementById("adrPcaFile");
+  const fsnInput = document.getElementById("adrFsnFile");
 
-  const availCampaign = document.getElementById("avail-campaign");
-  const availCategory = document.getElementById("avail-category");
-  const availAdsType = document.getElementById("avail-adstype");
-  const availPLADate = document.getElementById("avail-pla-date");
-  const availPCADate = document.getElementById("avail-pca-date");
-  const availDailyWeekly = document.getElementById("avail-daily-weekly");
+  const sPLA = document.getElementById("adrStatusPla");
+  const sPCA = document.getElementById("adrStatusPca");
+  const sFSN = document.getElementById("adrStatusFsn");
+
+  const aCampaign = document.getElementById("adrAvailCampaign");
+  const aCategory = document.getElementById("adrAvailCategory");
+  const aAdsType = document.getElementById("adrAvailAdsType");
+  const aPlaDate = document.getElementById("adrAvailPlaDate");
+  const aPcaDate = document.getElementById("adrAvailPcaDate");
+  const aDailyWeekly = document.getElementById("adrAvailDailyWeekly");
 
   let hasPLA = false;
   let hasPCA = false;
   let hasFSN = false;
 
-  function updateStatus() {
-    statusPLA.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
-    statusPCA.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
-    statusFSN.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
+  function updateUI() {
+    sPLA.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
+    sPCA.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
+    sFSN.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
 
     // Campaign Report
-    availCampaign.textContent =
-      hasPLA || hasPCA ? "Partial" : "Blocked";
+    aCampaign.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
 
     // Category-wise
-    availCategory.textContent =
-      hasFSN ? "Available" : "Blocked";
+    aCategory.textContent = hasFSN ? "Available" : "Blocked";
 
     // Ads Type
-    availAdsType.textContent =
-      hasPLA || hasPCA ? "Partial" : "Blocked";
+    aAdsType.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
 
-    // PLA Date-wise
-    availPLADate.textContent =
-      hasPLA ? "Available" : "Hidden";
-
-    // PCA Date-wise
-    availPCADate.textContent =
-      hasPCA ? "Available" : "Hidden";
+    // Date-wise visibility
+    aPlaDate.textContent = hasPLA ? "Available" : "Hidden";
+    aPcaDate.textContent = hasPCA ? "Available" : "Hidden";
 
     // Daily & Weekly
-    availDailyWeekly.textContent =
-      hasPLA || hasPCA || hasFSN ? "Partial" : "Blocked";
+    aDailyWeekly.textContent =
+      (hasPLA || hasPCA || hasFSN) ? "Partial" : "Blocked";
   }
 
-  plaInput.addEventListener("change", function () {
-    hasPLA = !!plaInput.files.length;
-    updateStatus();
+  plaInput.addEventListener("change", () => {
+    hasPLA = plaInput.files.length > 0;
+    updateUI();
   });
 
-  pcaInput.addEventListener("change", function () {
-    hasPCA = !!pcaInput.files.length;
-    updateStatus();
+  pcaInput.addEventListener("change", () => {
+    hasPCA = pcaInput.files.length > 0;
+    updateUI();
   });
 
-  fsnInput.addEventListener("change", function () {
-    hasFSN = !!fsnInput.files.length;
-    updateStatus();
+  fsnInput.addEventListener("change", () => {
+    hasFSN = fsnInput.files.length > 0;
+    updateUI();
   });
 
 })();
