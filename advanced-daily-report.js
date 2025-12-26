@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 6C + 6D
- * PLA & PCA Date-wise Performance
+ * ADVANCED DAILY REPORT — PHASE 6E (FINAL)
+ * Ads Type default sorting by Spend (High → Low)
  *************************************************/
 
 (function () {
@@ -93,90 +93,70 @@
     clearOldTables();
     renderDateRange();
 
-    if (hasPLA) renderPlaDateWise();
-    if (hasPCA) renderPcaDateWise();
+    renderAdsTypeReport();
   };
 
-  /* ================= PLA DATE-WISE ================= */
+  /* ================= ADS TYPE REPORT ================= */
 
-  function renderPlaDateWise() {
-    const h = plaRows[2].map(normalize);
-    const idx = {
-      date: h.indexOf("date"),
-      views: h.indexOf("views"),
-      clicks: h.indexOf("clicks"),
-      spend: h.indexOf("ad spend"),
-      units: h.indexOf("total converted units"),
-      revenue: h.indexOf("total revenue (rs.)")
+  function renderAdsTypeReport() {
+    const data = {
+      PLA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 },
+      PCA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 }
     };
 
-    const map = {};
+    if (hasPLA) {
+      const h = plaRows[2].map(normalize);
+      const idx = {
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("ad spend"),
+        units: h.indexOf("total converted units"),
+        revenue: h.indexOf("total revenue (rs.)")
+      };
 
-    plaRows.slice(3).forEach(r => {
-      const d = r[idx.date];
-      if (!d) return;
+      plaRows.slice(3).forEach(r => {
+        data.PLA.views += toNum(r[idx.views]);
+        data.PLA.clicks += toNum(r[idx.clicks]);
+        data.PLA.spend += toNum(r[idx.spend]);
+        data.PLA.units += toNum(r[idx.units]);
+        data.PLA.revenue += toNum(r[idx.revenue]);
+      });
+    }
 
-      if (!map[d]) {
-        map[d] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-      }
+    if (hasPCA) {
+      const h = pcaRows[2].map(normalize);
+      const idx = {
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("banner_group_spend"),
+        dUnits: h.indexOf("direct units"),
+        iUnits: h.indexOf("indirect units"),
+        dRev: h.indexOf("direct revenue"),
+        iRev: h.indexOf("indirect revenue")
+      };
 
-      map[d].views += toNum(r[idx.views]);
-      map[d].clicks += toNum(r[idx.clicks]);
-      map[d].spend += toNum(r[idx.spend]);
-      map[d].units += toNum(r[idx.units]);
-      map[d].revenue += toNum(r[idx.revenue]);
-    });
+      pcaRows.slice(3).forEach(r => {
+        data.PCA.views += toNum(r[idx.views]);
+        data.PCA.clicks += toNum(r[idx.clicks]);
+        data.PCA.spend += toNum(r[idx.spend]);
+        data.PCA.units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+        data.PCA.revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
+      });
+    }
 
-    renderDateTable("PLA Performance – Date-wise", map);
+    renderAdsTypeTable(data);
   }
 
-  /* ================= PCA DATE-WISE ================= */
-
-  function renderPcaDateWise() {
-    const h = pcaRows[2].map(normalize);
-    const idx = {
-      date: h.indexOf("date"),
-      views: h.indexOf("views"),
-      clicks: h.indexOf("clicks"),
-      spend: h.indexOf("banner_group_spend"),
-      dUnits: h.indexOf("direct units"),
-      iUnits: h.indexOf("indirect units"),
-      dRev: h.indexOf("direct revenue"),
-      iRev: h.indexOf("indirect revenue")
-    };
-
-    const map = {};
-
-    pcaRows.slice(3).forEach(r => {
-      const d = r[idx.date];
-      if (!d) return;
-
-      if (!map[d]) {
-        map[d] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-      }
-
-      map[d].views += toNum(r[idx.views]);
-      map[d].clicks += toNum(r[idx.clicks]);
-      map[d].spend += toNum(r[idx.spend]);
-      map[d].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-      map[d].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
-    });
-
-    renderDateTable("PCA Performance – Date-wise", map);
-  }
-
-  /* ================= COMMON DATE TABLE ================= */
-
-  function renderDateTable(title, data) {
+  function renderAdsTypeTable(data) {
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>${title}</h4>`;
+    wrap.innerHTML = `<h4>Ads Type Performance</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
-          <th>Date</th>
+          <th>Ads Type</th>
           <th>Views</th>
           <th>Clicks</th>
           <th>Spend (₹)</th>
@@ -191,12 +171,12 @@
     const tbody = table.querySelector("tbody");
 
     Object.entries(data)
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .forEach(([d, v]) => {
+      .sort((a, b) => b[1].spend - a[1].spend) // ✅ Spend High → Low
+      .forEach(([t, v]) => {
         const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${d}</td>
+          <td>${t}</td>
           <td>${v.views}</td>
           <td>${v.clicks}</td>
           <td>${v.spend.toFixed(2)}</td>
