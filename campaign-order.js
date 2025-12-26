@@ -1,7 +1,21 @@
-throw new Error("CAMPAIGN ORDER JS EXECUTED");
-
 /*************************************************
- * CAMPAIGN ORDER REPORT – FINAL (STABLE + FIXES)
+ * CAMPAIGN ORDER REPORT – FINAL
+ * Fully isolated | JS only | Stable
+ *
+ * FIXED HEADER CONTRACT (DO NOT CHANGE):
+ * Campaign ID
+ * AdGroup Name
+ * Listing ID
+ * Product Name
+ * Advertised FSN ID
+ * Date
+ * order_id
+ * AdGroup CPC
+ * Expected ROI
+ * Purchased FSN ID
+ * Total Revenue (Rs.)
+ * Direct Units Sold
+ * Indirect Units Sold
  *************************************************/
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,6 +33,8 @@ function generateCampaignOrderReport() {
   const reader = new FileReader();
   reader.onload = () => {
     const rows = parseCSV(reader.result);
+
+    /* ===== Header (fixed row) ===== */
     const headers = rows[2];
     const data = rows.slice(3);
 
@@ -38,7 +54,7 @@ function generateCampaignOrderReport() {
       }
     }
 
-    /* ===== Aggregation (UNCHANGED) ===== */
+    /* ===== Aggregation ===== */
     const campaignMap = {};
     const dateMap = {};
     const dowMap = {
@@ -57,11 +73,13 @@ function generateCampaignOrderReport() {
 
       const fsn = r[idx.fsn];
       const dateStr = r[idx.date];
+
       const du = +r[idx.direct] || 0;
       const iu = +r[idx.indirect] || 0;
       const units = du + iu;
       const rev = +r[idx.revenue] || 0;
 
+      /* Campaign */
       if (!campaignMap[c]) {
         campaignMap[c] = {
           orders:0, direct:0, indirect:0,
@@ -75,22 +93,27 @@ function generateCampaignOrderReport() {
       campaignMap[c].units += units;
       campaignMap[c].revenue += rev;
 
+      /* Campaign → FSN */
       if (!campaignMap[c].fsns[fsn]) {
         campaignMap[c].fsns[fsn] = { orders:0, units:0, revenue:0 };
       }
+
       campaignMap[c].fsns[fsn].orders++;
       campaignMap[c].fsns[fsn].units += units;
       campaignMap[c].fsns[fsn].revenue += rev;
 
+      /* Date */
       if (!dateMap[dateStr]) {
         dateMap[dateStr] = { orders:0,direct:0,indirect:0,units:0,revenue:0 };
       }
+
       dateMap[dateStr].orders++;
       dateMap[dateStr].direct += du;
       dateMap[dateStr].indirect += iu;
       dateMap[dateStr].units += units;
       dateMap[dateStr].revenue += rev;
 
+      /* Day of week */
       const day = new Date(dateStr).toLocaleDateString("en-US",{weekday:"long"});
       if (dowMap[day]) {
         dowMap[day].o++;
@@ -101,13 +124,14 @@ function generateCampaignOrderReport() {
       }
     });
 
-    /* ===== Campaign Summary (UNCHANGED) ===== */
+    /* ================= CAMPAIGN SUMMARY ================= */
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
+
     Object.entries(campaignMap)
       .sort((a,b)=>b[1].revenue-a[1].revenue)
       .forEach(([c,v])=>{
-        campBody.innerHTML+=`
+        campBody.innerHTML += `
           <tr>
             <td>${c}</td>
             <td>${v.orders}</td>
@@ -118,22 +142,24 @@ function generateCampaignOrderReport() {
           </tr>`;
       });
 
-    /* ===== Campaign → FSN (FIXED EXPAND / COLLAPSE) ===== */
+    /* ================= CAMPAIGN → FSN (EXPAND / COLLAPSE) ================= */
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
-    let gid = 0;
 
+    let gid = 0;
     Object.entries(campaignMap).forEach(([c,v])=>{
       const g = "grp_"+gid++;
-      fsnBody.innerHTML+=`
+
+      fsnBody.innerHTML += `
         <tr class="cor-campaign-row" data-group="${g}">
           <td style="cursor:pointer;font-weight:600">▶ ${c}</td>
           <td>${v.orders}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(0)}</td>
         </tr>`;
+
       Object.entries(v.fsns).forEach(([fsn,x])=>{
-        fsnBody.innerHTML+=`
+        fsnBody.innerHTML += `
           <tr class="cor-fsn-row hidden" data-parent="${g}">
             <td style="padding-left:22px">${fsn}</td>
             <td>${x.orders}</td>
@@ -143,20 +169,25 @@ function generateCampaignOrderReport() {
       });
     });
 
-    document.getElementById("corFsnTable").onclick = e => {
-      const row = e.target.closest(".cor-campaign-row");
-      if (!row) return;
-      const g = row.dataset.group;
-      const kids = document.querySelectorAll(`[data-parent="${g}"]`);
-      const open = kids[0].classList.contains("hidden");
-      kids.forEach(r=>r.classList.toggle("hidden",!open));
-      row.querySelector("td").textContent =
-        (open?"▼ ":"▶ ") + row.querySelector("td").textContent.slice(2);
-    };
+    document.querySelectorAll(".cor-campaign-row").forEach(row=>{
+      row.onclick=()=>{
+        const g=row.dataset.group;
+        const cell=row.querySelector("td");
+        const kids=document.querySelectorAll(`[data-parent="${g}"]`);
+        const collapsed=kids[0]?.classList.contains("hidden");
 
-    /* ===== Order Date Trend (UNCHANGED) ===== */
+        kids.forEach(r=>r.classList.toggle("hidden",!collapsed));
+        cell.innerHTML=cell.innerHTML.replace(
+          collapsed?"▶":"▼",
+          collapsed?"▼":"▶"
+        );
+      };
+    });
+
+    /* ================= ORDER DATE TREND ================= */
     const dateBody=document.querySelector("#corDateTable tbody");
     dateBody.innerHTML="";
+
     Object.entries(dateMap)
       .sort((a,b)=>new Date(a[0])-new Date(b[0]))
       .forEach(([d,v])=>{
@@ -171,13 +202,15 @@ function generateCampaignOrderReport() {
           </tr>`;
       });
 
-    /* ===== Direct vs Indirect – Campaign (UNCHANGED) ===== */
+    /* ================= DIRECT vs INDIRECT IMPACT ================= */
     const diCampBody=document.querySelector("#diCampaignTable tbody");
     diCampBody.innerHTML="";
+
     Object.entries(campaignMap).forEach(([c,v])=>{
       const assist=(v.indirect/Math.max(v.direct+v.indirect,1))*100;
       const dRev=v.revenue*(v.direct/Math.max(v.direct+v.indirect,1));
       const iRev=v.revenue*(v.indirect/Math.max(v.direct+v.indirect,1));
+
       diCampBody.innerHTML+=`
         <tr>
           <td>${c}</td>
@@ -189,64 +222,53 @@ function generateCampaignOrderReport() {
         </tr>`;
     });
 
-    /* ===== Direct vs Indirect – FSN (TOP 20 TOGGLE) ===== */
     const diFsnBody=document.querySelector("#diFsnTable tbody");
     diFsnBody.innerHTML="";
-    const fsnAgg={};
 
-    Object.values(campaignMap).forEach(v=>{
+    Object.entries(campaignMap).forEach(([_,v])=>{
       const ratio=v.indirect/Math.max(v.direct+v.indirect,1);
       Object.entries(v.fsns).forEach(([fsn,x])=>{
-        if(!fsnAgg[fsn]) fsnAgg[fsn]={d:0,i:0,r:0};
-        fsnAgg[fsn].d+=Math.round(x.units*(1-ratio));
-        fsnAgg[fsn].i+=Math.round(x.units*ratio);
-        fsnAgg[fsn].r+=x.revenue;
+        diFsnBody.innerHTML+=`
+          <tr>
+            <td>${fsn}</td>
+            <td>${Math.round(x.units*(1-ratio))}</td>
+            <td>${Math.round(x.units*ratio)}</td>
+            <td>${(ratio*100).toFixed(1)}%</td>
+            <td>${x.revenue.toFixed(0)}</td>
+          </tr>`;
       });
     });
 
-    Object.entries(fsnAgg)
-      .map(([fsn,v])=>({fsn,...v,u:v.d+v.i}))
-      .sort((a,b)=>b.u-a.u)
-      .forEach((v,i)=>{
-        diFsnBody.innerHTML+=`
-          <tr class="${i>=20?"hidden fsn-extra":""}">
-            <td>${v.fsn}</td>
-            <td>${v.d}</td>
-            <td>${v.i}</td>
-            <td>${((v.i/Math.max(v.u,1))*100).toFixed(1)}%</td>
-            <td>${v.r.toFixed(0)}</td>
-          </tr>`;
-      });
-
-    document.getElementById("showAllFsn")?.onclick=()=>
-      document.querySelectorAll(".fsn-extra")
-        .forEach(r=>r.classList.remove("hidden"));
-
-    document.getElementById("showTop20Fsn")?.onclick=()=>
-      document.querySelectorAll(".fsn-extra")
-        .forEach(r=>r.classList.add("hidden"));
-
-    /* ===== Day of Week + Cannibalization (UNCHANGED) ===== */
+    /* ================= DAY OF WEEK IMPACT ================= */
     const dowBody=document.querySelector("#dowTable tbody");
     dowBody.innerHTML="";
-    Object.entries(dowMap).forEach(([d,v])=>{
+
+    Object.entries(dowMap).forEach(([day,v])=>{
       if(!v.o) return;
+      const assist=(v.i/Math.max(v.d+v.i,1))*100;
+
       dowBody.innerHTML+=`
         <tr>
-          <td>${d}</td>
+          <td>${day}</td>
           <td>${v.o}</td>
           <td>${v.d}</td>
           <td>${v.i}</td>
           <td>${v.u}</td>
-          <td>${((v.i/Math.max(v.d+v.i,1))*100).toFixed(1)}%</td>
+          <td>${assist.toFixed(1)}%</td>
           <td>${v.r.toFixed(0)}</td>
         </tr>`;
     });
 
+    /* ================= CANNIBALIZATION RISK ================= */
     const cannibalBody=document.querySelector("#cannibalTable tbody");
     cannibalBody.innerHTML="";
+
     Object.entries(campaignMap).forEach(([c,v])=>{
       const assist=(v.indirect/Math.max(v.direct+v.indirect,1))*100;
+      let flag="🟢 Good";
+      if(assist>=70) flag="🔴 Bad";
+      else if(assist>=40) flag="🟠 Average";
+
       cannibalBody.innerHTML+=`
         <tr>
           <td>${c}</td>
@@ -254,9 +276,10 @@ function generateCampaignOrderReport() {
           <td>${v.direct}</td>
           <td>${v.indirect}</td>
           <td>${v.revenue.toFixed(0)}</td>
-          <td><b>${assist>=70?"🔴 Bad":assist>=40?"🟠 Average":"🟢 Good"}</b></td>
+          <td><b>${flag}</b></td>
         </tr>`;
     });
   };
+
   reader.readAsText(fileInput.files[0]);
 }
