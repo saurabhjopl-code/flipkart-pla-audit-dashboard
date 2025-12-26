@@ -124,80 +124,26 @@
   /* ================= GENERATE ================= */
 
   generateBtn.onclick = () => {
-    if (!(hasPLA || hasPCA)) {
-      alert("Upload PLA or PCA to generate report");
-      return;
-    }
+  if (!hasPLA && !hasPCA) {
+    alert("Upload PLA or PCA file");
+    return;
+  }
 
-    clearOldTables();
-    renderDateRange();
+  clearOutput();
+  renderPeriod();
 
-    const daily = {};
-    const weekly = {};
+  /* ===== STRATEGIC REPORTS ===== */
+  renderCampaignAudit();          // ✅ Campaign-wise
+  if (hasFSN) renderCategoryWise(); // ✅ Category-wise
+  renderAdsType();                // ✅ Ads Type
 
-    /* ===== PLA ===== */
-    if (hasPLA) {
-      const h = plaRows[2].map(normalize);
-      const idx = {
-        date: h.indexOf("date"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("ad spend"),
-        units: h.indexOf("total converted units"),
-        revenue: h.indexOf("total revenue (rs.)")
-      };
+  /* ===== TEMPORAL REPORTS ===== */
+  if (hasPCA) renderPcaDateWise(); // ✅ PCA Date-wise
+  if (hasPLA) renderPlaDateWise(); // ✅ PLA Date-wise
+  renderDailyCombined();           // ✅ Daily (PLA + PCA)
+  renderWeeklyCombined();          // ✅ Weekly
+};
 
-      plaRows.slice(3).forEach(r => {
-        const d = r[idx.date];
-        if (!d) return;
-        const w = isoWeek(d);
-
-        [daily, weekly].forEach((obj, i) => {
-          const key = i === 0 ? d : w;
-          if (!obj[key]) obj[key] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-          obj[key].views += toNum(r[idx.views]);
-          obj[key].clicks += toNum(r[idx.clicks]);
-          obj[key].spend += toNum(r[idx.spend]);
-          obj[key].units += toNum(r[idx.units]);
-          obj[key].revenue += toNum(r[idx.revenue]);
-        });
-      });
-    }
-
-    /* ===== PCA ===== */
-    if (hasPCA) {
-      const h = pcaRows[2].map(normalize);
-      const idx = {
-        date: h.indexOf("date"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("banner_group_spend"),
-        dUnits: h.indexOf("direct units"),
-        iUnits: h.indexOf("indirect units"),
-        dRev: h.indexOf("direct revenue"),
-        iRev: h.indexOf("indirect revenue")
-      };
-
-      pcaRows.slice(3).forEach(r => {
-        const d = r[idx.date];
-        if (!d) return;
-        const w = isoWeek(d);
-
-        [daily, weekly].forEach((obj, i) => {
-          const key = i === 0 ? d : w;
-          if (!obj[key]) obj[key] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-          obj[key].views += toNum(r[idx.views]);
-          obj[key].clicks += toNum(r[idx.clicks]);
-          obj[key].spend += toNum(r[idx.spend]);
-          obj[key].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-          obj[key].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
-        });
-      });
-    }
-
-    renderTrendTable("Daily Trend", daily);
-    renderTrendTable("ISO Weekly Trend", weekly);
-  };
 
   /* ================= RENDER ================= */
 
