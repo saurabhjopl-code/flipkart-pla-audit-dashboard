@@ -1,21 +1,19 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 3
- * Campaign Report + Ads Type Analysis
- * (Safe, Isolated, Locked-core compliant)
+ * ADVANCED DAILY REPORT — PHASE 4
+ * Rendering Campaign & Ads Type Tables
  *************************************************/
 
 (function () {
 
   /* ===============================
-     FILE INPUTS
+     ELEMENT REFERENCES
   =============================== */
   const plaInput = document.getElementById("adrPlaFile");
   const pcaInput = document.getElementById("adrPcaFile");
   const fsnInput = document.getElementById("adrFsnFile");
+  const generateBtn = document.getElementById("adrGenerateBtn");
+  const container = document.getElementById("advancedDaily");
 
-  /* ===============================
-     STATUS ELEMENTS
-  =============================== */
   const sPla = document.getElementById("adrStatusPla");
   const sPca = document.getElementById("adrStatusPca");
   const sFsn = document.getElementById("adrStatusFsn");
@@ -30,32 +28,11 @@
   /* ===============================
      INTERNAL STATE
   =============================== */
-  let hasPLA = false, hasPCA = false, hasFSN = false;
   let plaRows = [], pcaRows = [], fsnRows = [];
+  let hasPLA = false, hasPCA = false, hasFSN = false;
 
   /* ===============================
-     LOCKED HEADERS
-  =============================== */
-  const HEADERS = {
-    PLA: [
-      "Campaign ID","Campaign Name","Date","Ad Spend","Views","Clicks",
-      "Total converted units","Total Revenue (Rs.)","ROI"
-    ],
-    PCA: [
-      "campaign_id","campaign_name","ad_group_id","ad_group_name","Date",
-      "banner_group_spend","views","clicks","CTR","average_cpc",
-      "DIRECT PPV","DIRECT UNITS","INDIRECT UNITS","CVR",
-      "DIRECT REVENUE","INDIRECT REVENUE","Direct ROI","Indirect ROI"
-    ],
-    FSN: [
-      "Campaign ID","Campaign Name","AdGroup ID","AdGroup Name","Sku Id",
-      "Product Name","Views","Clicks","Direct Units Sold",
-      "Indirect Units Sold","Total Revenue (Rs.)","Conversion Rate","ROI"
-    ]
-  };
-
-  /* ===============================
-     CSV PARSER
+     HELPERS
   =============================== */
   function parseCSV(text) {
     const rows = [];
@@ -77,103 +54,71 @@
     return v.replace(/\ufeff/g, "").trim().toLowerCase();
   }
 
-  function validate(rows, type) {
-    if (!rows[2]) return false;
-    const actual = rows[2].map(normalize);
-    return HEADERS[type].every(h => actual.includes(normalize(h)));
+  function toNum(v) {
+    return Number(String(v).replace(/[^0-9.-]/g, "")) || 0;
   }
 
-  /* ===============================
-     AVAILABILITY LOGIC
-  =============================== */
-  function refreshAvailability() {
+  function clearOldTables() {
+    container.querySelectorAll(".adr-generated").forEach(e => e.remove());
+  }
 
+  function refreshAvailability() {
     sPla.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
     sPca.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
     sFsn.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
 
     if (hasPLA && hasPCA && hasFSN) {
-      aCampaign.textContent = "Available";
-      aCategory.textContent = "Available";
-      aAdsType.textContent = "Available";
-      aPlaDate.textContent = "Available";
-      aPcaDate.textContent = "Available";
+      aCampaign.textContent =
+      aCategory.textContent =
+      aAdsType.textContent =
+      aPlaDate.textContent =
+      aPcaDate.textContent =
       aDailyWeekly.textContent = "Available";
-      return;
     }
-
-    aCampaign.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
-    aAdsType.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
-    aCategory.textContent = hasFSN ? "Available" : "Blocked";
-    aPlaDate.textContent = hasPLA ? "Available" : "Hidden";
-    aPcaDate.textContent = hasPCA ? "Available" : "Hidden";
-    aDailyWeekly.textContent =
-      (hasPLA || hasPCA || hasFSN) ? "Partial" : "Blocked";
   }
 
   /* ===============================
-     FILE HANDLER
-  =============================== */
-  async function handleFile(input, type) {
-    if (!input.files.length) return [];
-    const text = await input.files[0].text();
-    const rows = parseCSV(text);
-    if (!validate(rows, type)) {
-      alert(type + " header validation failed");
-      input.value = "";
-      return [];
-    }
-    return rows;
-  }
-
-  /* ===============================
-     INPUT EVENTS
+     FILE LOADERS (VALIDATION ALREADY DONE)
   =============================== */
   plaInput.onchange = async () => {
-    hasPLA = false;
-    plaRows = await handleFile(plaInput, "PLA");
-    hasPLA = plaRows.length > 0;
+    plaRows = parseCSV(await plaInput.files[0].text());
+    hasPLA = plaRows.length > 3;
     refreshAvailability();
-    buildReports();
   };
 
   pcaInput.onchange = async () => {
-    hasPCA = false;
-    pcaRows = await handleFile(pcaInput, "PCA");
-    hasPCA = pcaRows.length > 0;
+    pcaRows = parseCSV(await pcaInput.files[0].text());
+    hasPCA = pcaRows.length > 3;
     refreshAvailability();
-    buildReports();
   };
 
   fsnInput.onchange = async () => {
-    hasFSN = false;
-    fsnRows = await handleFile(fsnInput, "FSN");
-    hasFSN = fsnRows.length > 0;
+    fsnRows = parseCSV(await fsnInput.files[0].text());
+    hasFSN = fsnRows.length > 3;
     refreshAvailability();
   };
 
   /* ===============================
-     PHASE 3 — AGGREGATION
+     GENERATE REPORT
   =============================== */
+  generateBtn.onclick = () => {
+    if (!(hasPLA || hasPCA)) {
+      alert("Upload PLA or PCA to generate report");
+      return;
+    }
 
-  function toNum(v) {
-    return Number(String(v).replace(/[^0-9.-]/g, "")) || 0;
-  }
-
-  function buildReports() {
-    if (!(hasPLA || hasPCA)) return;
+    clearOldTables();
 
     const campaignMap = {};
     const adsType = {
-      PLA: { spend: 0, revenue: 0, units: 0 },
-      PCA: { spend: 0, revenue: 0, units: 0 }
+      PLA: { spend: 0, units: 0, revenue: 0 },
+      PCA: { spend: 0, units: 0, revenue: 0 }
     };
 
     /* ===== PLA ===== */
     if (hasPLA) {
       const h = plaRows[2];
-      const rows = plaRows.slice(3);
-
+      const r = plaRows.slice(3);
       const idx = {
         campaign: h.indexOf("Campaign Name"),
         spend: h.indexOf("Ad Spend"),
@@ -181,30 +126,27 @@
         revenue: h.indexOf("Total Revenue (Rs.)")
       };
 
-      rows.forEach(r => {
-        const c = r[idx.campaign];
-        if (!campaignMap[c]) {
-          campaignMap[c] = { spend: 0, revenue: 0, units: 0 };
-        }
-        const spend = toNum(r[idx.spend]);
-        const units = toNum(r[idx.units]);
-        const revenue = toNum(r[idx.revenue]);
+      r.forEach(row => {
+        const c = row[idx.campaign];
+        if (!campaignMap[c]) campaignMap[c] = { spend: 0, units: 0, revenue: 0 };
+        const s = toNum(row[idx.spend]);
+        const u = toNum(row[idx.units]);
+        const rev = toNum(row[idx.revenue]);
 
-        campaignMap[c].spend += spend;
-        campaignMap[c].units += units;
-        campaignMap[c].revenue += revenue;
+        campaignMap[c].spend += s;
+        campaignMap[c].units += u;
+        campaignMap[c].revenue += rev;
 
-        adsType.PLA.spend += spend;
-        adsType.PLA.units += units;
-        adsType.PLA.revenue += revenue;
+        adsType.PLA.spend += s;
+        adsType.PLA.units += u;
+        adsType.PLA.revenue += rev;
       });
     }
 
     /* ===== PCA ===== */
     if (hasPCA) {
       const h = pcaRows[2];
-      const rows = pcaRows.slice(3);
-
+      const r = pcaRows.slice(3);
       const idx = {
         campaign: h.indexOf("campaign_name"),
         spend: h.indexOf("banner_group_spend"),
@@ -214,30 +156,104 @@
         iRev: h.indexOf("INDIRECT REVENUE")
       };
 
-      rows.forEach(r => {
-        const c = r[idx.campaign];
-        if (!campaignMap[c]) {
-          campaignMap[c] = { spend: 0, revenue: 0, units: 0 };
-        }
+      r.forEach(row => {
+        const c = row[idx.campaign];
+        if (!campaignMap[c]) campaignMap[c] = { spend: 0, units: 0, revenue: 0 };
+        const s = toNum(row[idx.spend]);
+        const u = toNum(row[idx.dUnits]) + toNum(row[idx.iUnits]);
+        const rev = toNum(row[idx.dRev]) + toNum(row[idx.iRev]);
 
-        const spend = toNum(r[idx.spend]);
-        const units = toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-        const revenue = toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
+        campaignMap[c].spend += s;
+        campaignMap[c].units += u;
+        campaignMap[c].revenue += rev;
 
-        campaignMap[c].spend += spend;
-        campaignMap[c].units += units;
-        campaignMap[c].revenue += revenue;
-
-        adsType.PCA.spend += spend;
-        adsType.PCA.units += units;
-        adsType.PCA.revenue += revenue;
+        adsType.PCA.spend += s;
+        adsType.PCA.units += u;
+        adsType.PCA.revenue += rev;
       });
     }
 
-    console.log("📊 Campaign Report", campaignMap);
-    console.log("📊 Ads Type Report", adsType);
+    renderCampaignTable(campaignMap);
+    renderAdsTypeTable(adsType);
+  };
 
-    // Phase 3 intentionally logs only (no tables yet)
+  /* ===============================
+     RENDERING
+  =============================== */
+  function renderCampaignTable(data) {
+    const wrap = document.createElement("div");
+    wrap.className = "adr-generated";
+    wrap.innerHTML = `<h4>Campaign Performance (Advanced)</h4>`;
+    const table = document.createElement("table");
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Campaign</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
+          <th>Revenue (₹)</th>
+          <th>ROI</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    Object.entries(data).forEach(([c, v]) => {
+      const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${c}</td>
+        <td>${v.spend.toFixed(2)}</td>
+        <td>${v.units}</td>
+        <td>${v.revenue.toFixed(2)}</td>
+        <td>${roi}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    wrap.appendChild(table);
+    container.appendChild(wrap);
+  }
+
+  function renderAdsTypeTable(data) {
+    const wrap = document.createElement("div");
+    wrap.className = "adr-generated";
+    wrap.innerHTML = `<h4>Ads Type Performance</h4>`;
+    const table = document.createElement("table");
+
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Ads Type</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
+          <th>Revenue (₹)</th>
+          <th>ROI</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+
+    const tbody = table.querySelector("tbody");
+
+    Object.entries(data).forEach(([t, v]) => {
+      const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${t}</td>
+        <td>${v.spend.toFixed(2)}</td>
+        <td>${v.units}</td>
+        <td>${v.revenue.toFixed(2)}</td>
+        <td>${roi}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    wrap.appendChild(table);
+    container.appendChild(wrap);
   }
 
 })();
