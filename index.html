@@ -7,98 +7,392 @@
 </head>
 <body>
 
-<h2>Flipkart Audit Dashboard</h2>
+<div class="header">
+  <h2>Flipkart Audit Dashboard</h2>
+</div>
 
 <div class="tabs">
   <button class="tab-btn active" data-tab="campaign">Daily Report</button>
-  <button class="tab-btn" data-tab="advancedDaily">Advanced Daily Report</button>
   <button class="tab-btn" data-tab="placement">Placement Performance</button>
   <button class="tab-btn" data-tab="keyword">Keyword Reports</button>
   <button class="tab-btn" data-tab="campaignOrder">Campaign Order Report</button>
   <button class="tab-btn" data-tab="traffic">Traffic Report - DO NOT USE</button>
+
+
+</div>
+<!-- ================= CAMPAIGN ORDER REPORT (ISOLATED) ================= -->
+<section id="campaignOrder" class="tab-content">
+
+  <h3>Campaign Order Report</h3>
+
+  <!-- Dedicated upload (NOT shared) -->
+  <input type="file" id="campaignOrderFile" accept=".csv">
+  <button onclick="generateCampaignOrderReport()">Generate Report</button>
+
+  <h4>Campaign Summary</h4>
+  <table id="corCampaignTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Campaign → FSN Performance</h4>
+  <table id="corFsnTable">
+    <thead>
+      <tr>
+        <th>Campaign / Advertised FSN</th>
+        <th>Orders</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Order Date Trend</h4>
+  <table id="corDateTable">
+  <thead>
+    <tr>
+      <th>Order Date</th>
+      <th>Orders</th>
+      <th>Direct Units</th>
+      <th>Indirect Units</th>
+      <th>Total Units</th>
+      <th>Total Revenue (₹)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<h4>Direct vs Indirect Impact</h4>
+
+<h5>Campaign Level</h5>
+<table id="diCampaignTable">
+  <thead>
+    <tr>
+      <th>Campaign ID</th>
+      <th>Direct Units</th>
+      <th>Indirect Units</th>
+      <th>Assist %</th>
+      <th>Direct Revenue (₹)</th>
+      <th>Indirect Revenue (₹)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h5>FSN Level</h5>
+<table id="diFsnTable">
+  <thead>
+    <tr>
+      <th>Advertised FSN ID</th>
+      <th>Direct Units</th>
+      <th>Indirect Units</th>
+      <th>Assist %</th>
+      <th>Total Revenue (₹)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<h4>Day-of-Week Impact</h4>
+<table id="dowTable">
+  <thead>
+    <tr>
+      <th>Day</th>
+      <th>Orders</th>
+      <th>Direct Units</th>
+      <th>Indirect Units</th>
+      <th>Total Units</th>
+      <th>Assist %</th>
+      <th>Total Revenue (₹)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h4>Cannibalization Risk Flags</h4>
+<table id="cannibalTable">
+  <thead>
+    <tr>
+      <th>Campaign ID</th>
+      <th>Assist %</th>
+      <th>Direct Units</th>
+      <th>Indirect Units</th>
+      <th>Total Revenue (₹)</th>
+      <th>Risk Flag</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+
+</section>
+
+
+  
+<!-- ================= DAILY REPORT ================= -->
+<section id="campaign" class="tab-content active">
+  <h3>Daily Report</h3>
+  <div id="reportPeriod" class="report-period"></div>
+
+  <input type="file" id="campaignFile" accept=".csv">
+  <button onclick="generateCampaign()">Generate Report</button>
+
+  <div id="campaignKpi" class="kpis"></div>
+
+  <table id="campaignTable">
+    <thead>
+      <tr>
+        <th>Campaign Name</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+        <th>Audit Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4 class="collapsible" onclick="toggleSection('dailySection')">Day-to-Day Performance</h4>
+  <div id="dailySection">
+    <table id="dailyTrendTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
+          <th>Revenue (₹)</th>
+          <th>ROI</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <h4 class="collapsible" onclick="toggleSection('weeklySection')">Weekly Performance</h4>
+  <div id="weeklySection">
+    <table id="weeklyTrendTable">
+      <thead>
+        <tr>
+          <th>Week</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
+          <th>Revenue (₹)</th>
+          <th>ROI</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ================= PLACEMENT ================= -->
+<section id="placement" class="tab-content">
+  <h3>Placement Performance</h3>
+  <div id="reportPeriodPlacement" class="report-period"></div>
+
+  <input type="file" id="placementFile" accept=".csv">
+  <button onclick="generatePlacement()">Generate Report</button>
+
+  <h4>Overall Placement Performance</h4>
+  <table id="placementOverallTable">
+    <thead>
+      <tr>
+        <th>Placement Type</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="placement-actions">
+    <button onclick="expandAllCampaigns()">Expand All</button>
+    <button onclick="collapseAllCampaigns()">Collapse All</button>
+  </div>
+
+  <h4>Campaign-wise Placement Performance</h4>
+  <table id="placementCampaignTable">
+    <thead>
+      <tr>
+        <th>Campaign</th>
+        <th>Placement</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<!-- ================= TRAFFIC ================= -->
+<section id="traffic" class="tab-content">
+  <h3>Traffic Report</h3>
+  <div id="trafficPeriod" class="report-period"></div>
+
+  <input type="file" id="trafficFile" accept=".csv">
+  <button onclick="generateTraffic()">Generate Report</button>
+
+  <div id="trafficKpi" class="kpis"></div>
+
+  <h4>Day-wise Traffic Performance</h4>
+  <table id="trafficDailyTable">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Impressions</th>
+        <th>Clicks</th>
+        <th>Revenue (₹)</th>
+        <th>Conversion Rate</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>SKU-wise Traffic Performance</h4>
+  <table id="trafficSkuTable">
+    <thead>
+      <tr>
+        <th>SKU ID</th>
+        <th>Product Title</th>
+        <th>Impressions</th>
+        <th>Clicks</th>
+        <th>Revenue (₹)</th>
+        <th>CTR</th>
+        <th>CVR</th>
+        <th>Audit Status</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+<section id="keyword" class="tab-content">
+  <h3>Keyword Reports</h3>
+
+  <div id="keywordPeriod" class="report-period"></div>
+
+  <input type="file" id="keywordFile" accept=".csv">
+  <button onclick="generateKeywordReport()">Generate Report</button>
+
+  <!-- Executive Summary -->
+<h4>Top Revenue Keywords</h4>
+<table id="kwTopRevenue">
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>Spend (₹)</th>
+      <th>Revenue (₹)</th>
+      <th>Units</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<h4>Top Waste Keywords</h4>
+<table id="kwTopWaste">
+  <thead>
+    <tr>
+      <th>Keyword</th>
+      <th>Spend (₹)</th>
+      <th>Revenue (₹)</th>
+      <th>Units</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+
+  <h4>ROI-Based Keyword Segmentation</h4>
+  <table id="kwSegment">
+    <thead>
+      <tr>
+        <th>Keyword</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+        <th>Segment</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+<h4>Campaign-wise Keyword Performance</h4>
+
+<div class="table-actions">
+  <button onclick="expandAllKeywords()">Expand All</button>
+  <button onclick="collapseAllKeywords()">Collapse All</button>
 </div>
 
-<!-- ================= EXISTING STABLE TABS ================= -->
+<table id="kwCampaign" class="report-table">
+  <thead>
+    <tr>
+      <th>Campaign / Keyword</th>
+      <th>Views</th>
+      <th>Clicks</th>
+      <th>Total Units Sold</th>
+      <th>ROI</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
 
-<section id="campaign" class="tab-content" style="display:block;">
-  <!-- EXISTING DAILY REPORT (UNCHANGED) -->
+  <h4>Keyword Trend — Day-wise</h4>
+  <table id="kwDay">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Keyword Trend — Week-wise</h4>
+  <table id="kwWeek">
+    <thead>
+      <tr>
+        <th>Week</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </section>
 
-<section id="placement" class="tab-content"></section>
-<section id="keyword" class="tab-content"></section>
-<section id="campaignOrder" class="tab-content"></section>
-<section id="traffic" class="tab-content"></section>
-
-<!-- ================= ADVANCED DAILY REPORT (PHASE 1) ================= -->
-
-<section id="advancedDaily" class="tab-content">
-
-  <h3>Advanced Daily Report</h3>
-
-  <!-- Upload Section -->
-  <div class="daily-upload-section">
-
-    <div class="upload-block">
-      <b>PLA Report</b><br>
-      <input type="file" id="adrPlaFile" accept=".csv">
-      <div class="file-status" id="adrPlaStatus"></div>
-    </div>
-
-    <div class="upload-block">
-      <b>PCA Report</b><br>
-      <input type="file" id="adrPcaFile" accept=".csv">
-      <div class="file-status" id="adrPcaStatus"></div>
-    </div>
-
-    <div class="upload-block">
-      <b>Consolidated FSN Report</b><br>
-      <input type="file" id="adrFsnFile" accept=".csv">
-      <div class="file-status" id="adrFsnStatus"></div>
-    </div>
-
-    <button id="adrGenerateBtn" disabled>Generate Report</button>
-  </div>
-
-  <hr>
-
-  <!-- PLACEHOLDER TABLES (Phase 1 only) -->
-
-  <h4>Campaign Report</h4>
-  <table id="adrCampaignTable"><tbody></tbody></table>
-
-  <h4>Category-wise Report</h4>
-  <table id="adrCategoryTable"><tbody></tbody></table>
-
-  <h4>Ads Type Report</h4>
-  <table id="adrAdsTypeTable"><tbody></tbody></table>
-
-  <h4>PLA Date-wise Performance</h4>
-  <div id="adrPlaDateSection">
-    <table><tbody></tbody></table>
-  </div>
-
-  <h4>PCA Date-wise Performance</h4>
-  <div id="adrPcaDateSection">
-    <table><tbody></tbody></table>
-  </div>
-
-  <h4>Daily Performance</h4>
-  <table id="adrDailyTable"><tbody></tbody></table>
-
-  <h4>Weekly Performance (ISO)</h4>
-  <table id="adrWeeklyTable"><tbody></tbody></table>
-
-</section>
-
-<footer>
-  © 2025 · Made by Saurabh Mondal | Contact: +91-8200611920
+<footer class="footer">
+  © 2025 · Made by Saurabh Mondal | Contact: +91-8200611920 | Email: saurabhpmondal@gmail.com
 </footer>
 
 <script src="script.js"></script>
 <script src="keyword.js"></script>
-<script src="campaign-order.js"></script>
-<script src="advanced-daily-report.js"></script>
-
+<script src="campaign-order.js"></script>  
 </body>
 </html>
+
+
+
+
+
+
 
