@@ -1,3 +1,6 @@
+alert("campaign-order.js LOADED");
+
+
 /*************************************************
  * CAMPAIGN ORDER REPORT – FINAL WIRED VERSION
  *************************************************/
