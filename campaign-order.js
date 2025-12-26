@@ -1,5 +1,5 @@
 /*************************************************
- * CAMPAIGN ORDER REPORT – FINAL (STABLE)
+ * CAMPAIGN ORDER REPORT – FINAL & STABLE
  *************************************************/
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -37,6 +37,7 @@ function generateCampaignOrderReport() {
     }
 
     /* ================= AGGREGATION ================= */
+
     const campaignMap = {};
     const dateMap = {};
     const dowMap = {
@@ -76,6 +77,7 @@ function generateCampaignOrderReport() {
       if (!campaignMap[c].fsns[fsn]) {
         campaignMap[c].fsns[fsn] = { orders:0, units:0, revenue:0 };
       }
+
       campaignMap[c].fsns[fsn].orders++;
       campaignMap[c].fsns[fsn].units += units;
       campaignMap[c].fsns[fsn].revenue += rev;
@@ -83,6 +85,7 @@ function generateCampaignOrderReport() {
       if (!dateMap[dateStr]) {
         dateMap[dateStr] = { orders:0,direct:0,indirect:0,units:0,revenue:0 };
       }
+
       dateMap[dateStr].orders++;
       dateMap[dateStr].direct += du;
       dateMap[dateStr].indirect += iu;
@@ -100,6 +103,7 @@ function generateCampaignOrderReport() {
     });
 
     /* ================= CAMPAIGN SUMMARY ================= */
+
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
     Object.entries(campaignMap)
@@ -116,7 +120,8 @@ function generateCampaignOrderReport() {
           </tr>`;
       });
 
-    /* ================= CAMPAIGN → FSN (FIXED) ================= */
+    /* ================= CAMPAIGN → FSN (EXPAND / COLLAPSE) ================= */
+
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
     let gid = 0;
@@ -124,12 +129,13 @@ function generateCampaignOrderReport() {
     Object.entries(campaignMap).forEach(([c,v])=>{
       const g = "grp_"+gid++;
       fsnBody.innerHTML+=`
-        <tr data-group="${g}" class="cor-campaign-row">
-          <td style="cursor:pointer;font-weight:600">▶ ${c}</td>
+        <tr data-group="${g}" style="font-weight:600;cursor:pointer">
+          <td>▶ ${c}</td>
           <td>${v.orders}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(0)}</td>
         </tr>`;
+
       Object.entries(v.fsns).forEach(([fsn,x])=>{
         fsnBody.innerHTML+=`
           <tr data-parent="${g}" class="hidden">
@@ -146,21 +152,60 @@ function generateCampaignOrderReport() {
       if (!row) return;
       const g = row.dataset.group;
       const kids = document.querySelectorAll(`tr[data-parent="${g}"]`);
+      if (!kids.length) return;
+
       const open = kids[0].classList.contains("hidden");
       kids.forEach(r=>r.classList.toggle("hidden",!open));
       row.firstElementChild.textContent =
-        (open?"▼ ":"▶ ")+row.firstElementChild.textContent.slice(2);
+        (open?"▼ ":"▶ ") + row.firstElementChild.textContent.slice(2);
     };
 
-    /* ================= DIRECT vs INDIRECT (FSN TOP 20) ================= */
-    const diFsnBody=document.querySelector("#diFsnTable tbody");
-    diFsnBody.innerHTML="";
-    const fsnAgg={};
+    /* ================= ORDER DATE TREND ================= */
+
+    const dateBody = document.querySelector("#corDateTable tbody");
+    dateBody.innerHTML = "";
+    Object.entries(dateMap)
+      .sort((a,b)=>new Date(a[0])-new Date(b[0]))
+      .forEach(([d,v])=>{
+        dateBody.innerHTML+=`
+          <tr>
+            <td>${d}</td>
+            <td>${v.orders}</td>
+            <td>${v.direct}</td>
+            <td>${v.indirect}</td>
+            <td>${v.units}</td>
+            <td>${v.revenue.toFixed(0)}</td>
+          </tr>`;
+      });
+
+    /* ================= DIRECT vs INDIRECT – CAMPAIGN ================= */
+
+    const diCampaignBody = document.querySelector("#diCampaignTable tbody");
+    diCampaignBody.innerHTML = "";
+    Object.entries(campaignMap).forEach(([c,v])=>{
+      const total = v.direct + v.indirect || 1;
+      const assist = (v.indirect / total) * 100;
+      diCampaignBody.innerHTML+=`
+        <tr>
+          <td>${c}</td>
+          <td>${v.direct}</td>
+          <td>${v.indirect}</td>
+          <td>${assist.toFixed(1)}%</td>
+          <td>${(v.revenue*(v.direct/total)).toFixed(0)}</td>
+          <td>${(v.revenue*(v.indirect/total)).toFixed(0)}</td>
+        </tr>`;
+    });
+
+    /* ================= DIRECT vs INDIRECT – FSN (TOP 20) ================= */
+
+    const diFsnBody = document.querySelector("#diFsnTable tbody");
+    diFsnBody.innerHTML = "";
+    const fsnAgg = {};
 
     Object.values(campaignMap).forEach(v=>{
-      const ratio=v.indirect/Math.max(v.direct+v.indirect,1);
+      const ratio = v.indirect / Math.max(v.direct+v.indirect,1);
       Object.entries(v.fsns).forEach(([fsn,x])=>{
-        if(!fsnAgg[fsn]) fsnAgg[fsn]={d:0,i:0,r:0};
+        if (!fsnAgg[fsn]) fsnAgg[fsn]={d:0,i:0,r:0};
         fsnAgg[fsn].d+=Math.round(x.units*(1-ratio));
         fsnAgg[fsn].i+=Math.round(x.units*ratio);
         fsnAgg[fsn].r+=x.revenue;
@@ -180,6 +225,46 @@ function generateCampaignOrderReport() {
             <td>${v.r.toFixed(0)}</td>
           </tr>`;
       });
+
+    /* ================= DAY OF WEEK ================= */
+
+    const dowBody = document.querySelector("#dowTable tbody");
+    dowBody.innerHTML = "";
+    Object.entries(dowMap).forEach(([day,v])=>{
+      if (!v.o) return;
+      dowBody.innerHTML+=`
+        <tr>
+          <td>${day}</td>
+          <td>${v.o}</td>
+          <td>${v.d}</td>
+          <td>${v.i}</td>
+          <td>${v.u}</td>
+          <td>${((v.i/Math.max(v.d+v.i,1))*100).toFixed(1)}%</td>
+          <td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+
+    /* ================= CANNIBALIZATION ================= */
+
+    const cannibalBody = document.querySelector("#cannibalTable tbody");
+    cannibalBody.innerHTML = "";
+    Object.entries(campaignMap).forEach(([c,v])=>{
+      const assist = (v.indirect/Math.max(v.direct+v.indirect,1))*100;
+      let flag="🟢 Low";
+      if (assist>=70) flag="🔴 High";
+      else if (assist>=40) flag="🟠 Medium";
+
+      cannibalBody.innerHTML+=`
+        <tr>
+          <td>${c}</td>
+          <td>${assist.toFixed(1)}%</td>
+          <td>${v.direct}</td>
+          <td>${v.indirect}</td>
+          <td>${v.revenue.toFixed(0)}</td>
+          <td>${flag}</td>
+        </tr>`;
+    });
   };
+
   reader.readAsText(fileInput.files[0]);
 }
