@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 2 (FINAL, FIXED)
- * STRICT HEADERS (LOCKED) + ROBUST VALIDATION
+ * ADVANCED DAILY REPORT — PHASE 2 (FINAL)
+ * STRICT & LOCKED HEADER VALIDATION
  *************************************************/
 
 (function () {
@@ -23,7 +23,7 @@
   let hasPLA = false, hasPCA = false, hasFSN = false;
   let plaRows = [], pcaRows = [], fsnRows = [];
 
-  /* ================= LOCKED HEADERS (NEVER CHANGE) ================= */
+  /* ================= LOCKED HEADERS ================= */
 
   const HEADERS = {
     PLA: [
@@ -42,24 +42,28 @@
       "campaign_name",
       "ad_group_id",
       "ad_group_name",
-      "date",
+      "Date",
+      "banner_group_spend",
       "views",
       "clicks",
-      "ad_spend",
-      "direct_units",
-      "indirect_units",
-      "direct_revenue",
-      "indirect_revenue",
-      "direct_roi",
-      "indirect_roi"
+      "CTR",
+      "average_cpc",
+      "DIRECT PPV",
+      "DIRECT UNITS",
+      "INDIRECT UNITS",
+      "CVR",
+      "DIRECT REVENUE",
+      "INDIRECT REVENUE",
+      "Direct ROI",
+      "Indirect ROI"
     ],
     FSN: [
       "Campaign ID",
       "Campaign Name",
       "AdGroup ID",
       "AdGroup Name",
-      "Advertised FSN ID",
-      "Product Title",
+      "Sku Id",
+      "Product Name",
       "Views",
       "Clicks",
       "Direct Units Sold",
@@ -90,17 +94,15 @@
   /* ================= HEADER NORMALIZATION ================= */
   function normalize(v) {
     return v
-      .replace(/\ufeff/g, "")   // BOM
+      .replace(/\ufeff/g, "")
       .trim()
       .toLowerCase();
   }
 
   function validate(rows, type) {
     if (!rows[2]) return false;
-
     const actual = rows[2].map(normalize);
     const required = HEADERS[type].map(normalize);
-
     return required.every(h => actual.includes(h));
   }
 
@@ -132,7 +134,6 @@
 
   async function handleFile(input, type) {
     if (!input.files.length) return [];
-
     const file = input.files[0];
     const text = await file.text();
     const rows = parseCSV(text);
