@@ -1,6 +1,5 @@
 /*************************************************
- * CAMPAIGN ORDER REPORT – FINAL CLEAN VERSION
- * Reset to last stable + correct additions
+ * CAMPAIGN ORDER REPORT – FINAL WIRED VERSION
  *************************************************/
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -38,14 +37,12 @@ function generateCampaignOrderReport() {
       }
     }
 
-    /* =====================================================
-       AGGREGATION (STRICTLY SEPARATED MAPS)
-    ===================================================== */
+    /* ================= AGGREGATION ================= */
 
     const campaignMap = {};
     const dateMap = {};
-    const dowMap = {};
     const fsnDIMap = {};
+    const dowMap = {};
 
     data.forEach(r => {
       const c = r[idx.campaign];
@@ -58,15 +55,10 @@ function generateCampaignOrderReport() {
       const units = du + iu;
       const rev = +r[idx.revenue] || 0;
 
-      /* ---------- Campaign map ---------- */
+      /* Campaign */
       if (!campaignMap[c]) {
         campaignMap[c] = {
-          orders: 0,
-          direct: 0,
-          indirect: 0,
-          units: 0,
-          revenue: 0,
-          fsns: {}
+          orders:0,direct:0,indirect:0,units:0,revenue:0,fsns:{}
         };
       }
       campaignMap[c].orders++;
@@ -76,15 +68,15 @@ function generateCampaignOrderReport() {
       campaignMap[c].revenue += rev;
 
       if (!campaignMap[c].fsns[fsn]) {
-        campaignMap[c].fsns[fsn] = { orders: 0, units: 0, revenue: 0 };
+        campaignMap[c].fsns[fsn] = {orders:0,units:0,revenue:0};
       }
       campaignMap[c].fsns[fsn].orders++;
       campaignMap[c].fsns[fsn].units += units;
       campaignMap[c].fsns[fsn].revenue += rev;
 
-      /* ---------- Date trend ---------- */
+      /* Date */
       if (!dateMap[date]) {
-        dateMap[date] = { o: 0, d: 0, i: 0, u: 0, r: 0 };
+        dateMap[date] = {o:0,d:0,i:0,u:0,r:0};
       }
       dateMap[date].o++;
       dateMap[date].d += du;
@@ -92,60 +84,50 @@ function generateCampaignOrderReport() {
       dateMap[date].u += units;
       dateMap[date].r += rev;
 
-      /* ---------- Day of week ---------- */
-      const day = new Date(date).toLocaleDateString("en-US", {
-        weekday: "long"
-      });
+      /* FSN DI */
+      if (!fsnDIMap[fsn]) {
+        fsnDIMap[fsn] = {direct:0,indirect:0,revenue:0};
+      }
+      fsnDIMap[fsn].direct += du;
+      fsnDIMap[fsn].indirect += iu;
+      fsnDIMap[fsn].revenue += rev;
+
+      /* Day of week */
+      const day = new Date(date).toLocaleDateString("en-US",{weekday:"long"});
       if (!dowMap[day]) {
-        dowMap[day] = { o: 0, d: 0, i: 0, u: 0, r: 0 };
+        dowMap[day] = {o:0,d:0,i:0,u:0,r:0};
       }
       dowMap[day].o++;
       dowMap[day].d += du;
       dowMap[day].i += iu;
       dowMap[day].u += units;
       dowMap[day].r += rev;
-
-      /* ---------- FSN DI ---------- */
-      if (!fsnDIMap[fsn]) {
-        fsnDIMap[fsn] = { direct: 0, indirect: 0, revenue: 0 };
-      }
-      fsnDIMap[fsn].direct += du;
-      fsnDIMap[fsn].indirect += iu;
-      fsnDIMap[fsn].revenue += rev;
     });
 
-    /* =====================================================
-       CAMPAIGN SUMMARY (RESTORED – STABLE)
-    ===================================================== */
+    /* ================= CAMPAIGN SUMMARY ================= */
 
     const campBody = document.querySelector("#corCampaignTable tbody");
     campBody.innerHTML = "";
+    Object.entries(campaignMap).forEach(([c,v])=>{
+      campBody.innerHTML += `
+        <tr>
+          <td>${c}</td>
+          <td>${v.orders}</td>
+          <td>${v.direct}</td>
+          <td>${v.indirect}</td>
+          <td>${v.units}</td>
+          <td>${v.revenue.toFixed(0)}</td>
+        </tr>`;
+    });
 
-    Object.entries(campaignMap)
-      .sort((a, b) => b[1].revenue - a[1].revenue)
-      .forEach(([c, v]) => {
-        campBody.innerHTML += `
-          <tr>
-            <td>${c}</td>
-            <td>${v.orders}</td>
-            <td>${v.direct}</td>
-            <td>${v.indirect}</td>
-            <td>${v.units}</td>
-            <td>${v.revenue.toFixed(0)}</td>
-          </tr>`;
-      });
-
-    /* =====================================================
-       CAMPAIGN → FSN PERFORMANCE (PARENT / CHILD)
-       DEFAULT COLLAPSED – WORKING
-    ===================================================== */
+    /* ================= CAMPAIGN → FSN (WORKING) ================= */
 
     const fsnBody = document.querySelector("#corFsnTable tbody");
     fsnBody.innerHTML = "";
 
     let gid = 0;
-    Object.entries(campaignMap).forEach(([c, v]) => {
-      const g = "grp_" + gid++;
+    Object.entries(campaignMap).forEach(([c,v])=>{
+      const g = "grp_"+gid++;
 
       fsnBody.innerHTML += `
         <tr class="cor-campaign-row" data-group="${g}">
@@ -155,7 +137,7 @@ function generateCampaignOrderReport() {
           <td>${v.revenue.toFixed(0)}</td>
         </tr>`;
 
-      Object.entries(v.fsns).forEach(([fsn, x]) => {
+      Object.entries(v.fsns).forEach(([fsn,x])=>{
         fsnBody.innerHTML += `
           <tr class="cor-fsn-row hidden" data-parent="${g}">
             <td style="padding-left:22px">${fsn}</td>
@@ -171,22 +153,19 @@ function generateCampaignOrderReport() {
       if (!row) return;
       const g = row.dataset.group;
       const kids = document.querySelectorAll(`[data-parent="${g}"]`);
-      const open = kids[0]?.classList.contains("hidden");
-      kids.forEach(k => k.classList.toggle("hidden", !open));
+      const open = kids[0].classList.contains("hidden");
+      kids.forEach(k=>k.classList.toggle("hidden",!open));
       row.querySelector("td").innerHTML =
-        (open ? "▼ " : "▶ ") + row.querySelector("td").innerText.slice(2);
+        (open?"▼ ":"▶ ") + row.querySelector("td").innerText.slice(2);
     };
 
-    /* =====================================================
-       ORDER DATE TREND (FIXED)
-    ===================================================== */
+    /* ================= ORDER DATE TREND ================= */
 
     const dateBody = document.querySelector("#corDateTable tbody");
     dateBody.innerHTML = "";
-
     Object.entries(dateMap)
-      .sort((a, b) => new Date(a[0]) - new Date(b[0]))
-      .forEach(([d, v]) => {
+      .sort((a,b)=>new Date(a[0])-new Date(b[0]))
+      .forEach(([d,v])=>{
         dateBody.innerHTML += `
           <tr>
             <td>${d}</td>
@@ -198,26 +177,24 @@ function generateCampaignOrderReport() {
           </tr>`;
       });
 
-    /* =====================================================
-       DIRECT vs INDIRECT – FSN LEVEL (TOP 20)
-    ===================================================== */
+    /* ================= DIRECT vs INDIRECT – FSN ================= */
 
     const fsnRows = Object.entries(fsnDIMap)
-      .map(([fsn, v]) => ({
+      .map(([fsn,v])=>({
         fsn,
-        direct: v.direct,
-        indirect: v.indirect,
-        units: v.direct + v.indirect,
-        revenue: v.revenue
+        direct:v.direct,
+        indirect:v.indirect,
+        units:v.direct+v.indirect,
+        revenue:v.revenue
       }))
-      .sort((a, b) => b.units - a.units);
+      .sort((a,b)=>b.units-a.units);
 
     const fsnDIbody = document.querySelector("#diFsnTable tbody");
     fsnDIbody.innerHTML = "";
 
-    fsnRows.forEach((v, i) => {
-      const assist = (v.indirect / Math.max(v.units, 1)) * 100;
-      const hidden = i >= 20 ? "hidden fsn-extra" : "";
+    fsnRows.forEach((v,i)=>{
+      const assist=(v.indirect/Math.max(v.units,1))*100;
+      const hidden=i>=20?"hidden fsn-extra":"";
       fsnDIbody.innerHTML += `
         <tr class="${hidden}">
           <td>${v.fsn}</td>
@@ -228,13 +205,52 @@ function generateCampaignOrderReport() {
         </tr>`;
     });
 
-    document.getElementById("showAllFsn")?.onclick = () =>
+    document.getElementById("showAllFsn")?.onclick=()=>{
       document.querySelectorAll(".fsn-extra")
-        .forEach(r => r.classList.remove("hidden"));
+        .forEach(r=>r.classList.remove("hidden"));
+    };
+    document.getElementById("showTopFsn")?.onclick=()=>{
+      document.querySelectorAll(".fsn-extra")
+        .forEach(r=>r.classList.add("hidden"));
+    };
 
-    document.getElementById("showTopFsn")?.onclick = () =>
-      document.querySelectorAll(".fsn-extra")
-        .forEach(r => r.classList.add("hidden"));
+    /* ================= DAY OF WEEK ================= */
+
+    const dowBody=document.querySelector("#dowTable tbody");
+    dowBody.innerHTML="";
+    Object.entries(dowMap).forEach(([d,v])=>{
+      const assist=(v.i/Math.max(v.d+v.i,1))*100;
+      dowBody.innerHTML+=`
+        <tr>
+          <td>${d}</td>
+          <td>${v.o}</td>
+          <td>${v.d}</td>
+          <td>${v.i}</td>
+          <td>${v.u}</td>
+          <td>${assist.toFixed(1)}%</td>
+          <td>${v.r.toFixed(0)}</td>
+        </tr>`;
+    });
+
+    /* ================= CANNIBALIZATION ================= */
+
+    const cannibalBody=document.querySelector("#cannibalTable tbody");
+    cannibalBody.innerHTML="";
+    Object.entries(campaignMap).forEach(([c,v])=>{
+      const assist=(v.indirect/Math.max(v.direct+v.indirect,1))*100;
+      let flag="🟢 Green";
+      if(assist>=70)flag="🔴 Red";
+      else if(assist>=40)flag="🟠 Amber";
+      cannibalBody.innerHTML+=`
+        <tr>
+          <td>${c}</td>
+          <td>${assist.toFixed(1)}%</td>
+          <td>${v.direct}</td>
+          <td>${v.indirect}</td>
+          <td>${v.revenue.toFixed(0)}</td>
+          <td><b>${flag}</b></td>
+        </tr>`;
+    });
   };
 
   reader.readAsText(file);
