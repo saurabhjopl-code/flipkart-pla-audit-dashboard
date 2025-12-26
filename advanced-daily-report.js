@@ -123,3 +123,42 @@ function markSection(tableId, enabled) {
 
   table.style.opacity = enabled ? "1" : "0.5";
 }
+<!-- Category-wise Report -->
+<h4>Category-wise Report</h4>
+<table id="adrCategoryTable">
+  <tbody></tbody>
+</table>
+
+<!-- Ads Type Report -->
+<h4>Ads Type Report</h4>
+<table id="adrAdsTypeTable">
+  <tbody></tbody>
+</table>
+
+<!-- PLA Date-wise -->
+<div id="adrPlaDateSection">
+  <h4>PLA Date-wise Performance</h4>
+  <table>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- PCA Date-wise -->
+<div id="adrPcaDateSection">
+  <h4>PCA Date-wise Performance</h4>
+  <table>
+    <tbody></tbody>
+  </table>
+</div>
+
+<!-- Daily Performance -->
+<h4>Daily Performance</h4>
+<table id="adrDailyTable">
+  <tbody></tbody>
+</table>
+
+<!-- Weekly Performance -->
+<h4>Weekly Performance</h4>
+<table id="adrWeeklyTable">
+  <tbody></tbody>
+</table>
