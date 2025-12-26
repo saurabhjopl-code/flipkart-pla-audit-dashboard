@@ -1,6 +1,6 @@
 /*************************************************
  * ADVANCED DAILY REPORT — PHASE 1
- * UI + VALIDATION ONLY (NO DATA LOGIC)
+ * VALIDATION + AVAILABILITY (FIXED LOGIC)
  *************************************************/
 
 (function () {
@@ -25,15 +25,36 @@
   let hasFSN = false;
 
   function refresh() {
+    /* ===== Upload Status ===== */
     sPla.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
     sPca.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
     sFsn.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
 
+    /* ===== FULL DATA OVERRIDE ===== */
+    if (hasPLA && hasPCA && hasFSN) {
+      aCampaign.textContent = "Available";
+      aCategory.textContent = "Available";
+      aAdsType.textContent = "Available";
+      aPlaDate.textContent = "Available";
+      aPcaDate.textContent = "Available";
+      aDailyWeekly.textContent = "Available";
+      return;
+    }
+
+    /* ===== PARTIAL / CONDITIONAL LOGIC ===== */
+
+    // Campaign & Ads Type
     aCampaign.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
-    aCategory.textContent = hasFSN ? "Available" : "Blocked";
     aAdsType.textContent = (hasPLA || hasPCA) ? "Partial" : "Blocked";
+
+    // Category-wise
+    aCategory.textContent = hasFSN ? "Available" : "Blocked";
+
+    // Date-wise
     aPlaDate.textContent = hasPLA ? "Available" : "Hidden";
     aPcaDate.textContent = hasPCA ? "Available" : "Hidden";
+
+    // Daily & Weekly
     aDailyWeekly.textContent =
       (hasPLA || hasPCA || hasFSN) ? "Partial" : "Blocked";
   }
