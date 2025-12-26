@@ -248,4 +248,9 @@ tr.hidden-row { display: none !important; }
 #kwMatchType td:first-child,
 #kwMatchType th:first-child {
   text-align: center;
+
+}
+/* ===== Utility: hide rows (used by JS toggles) ===== */
+.hidden {
+  display: none !important;
 }
