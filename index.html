@@ -18,7 +18,7 @@
   <button class="tab-btn" data-tab="campaignOrder">Campaign Order Report</button>
   <button class="tab-btn" data-tab="traffic">Traffic Report - DO NOT USE</button>
 
-  <!-- ===== ADDITION: Advanced Daily Report TAB ===== -->
+  <!-- ===== ADDITION ===== -->
   <button class="tab-btn" data-tab="advancedDaily">Advanced Daily Report</button>
 </div>
 
@@ -61,78 +61,80 @@
 
   <h4>Order Date Trend</h4>
   <table id="corDateTable">
-  <thead>
-    <tr>
-      <th>Order Date</th>
-      <th>Orders</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Total Units</th>
-      <th>Total Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<h4>Direct vs Indirect Impact</h4>
+    <thead>
+      <tr>
+        <th>Order Date</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<h5>Campaign Level</h5>
-<table id="diCampaignTable">
-  <thead>
-    <tr>
-      <th>Campaign ID</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Assist %</th>
-      <th>Direct Revenue (₹)</th>
-      <th>Indirect Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <h4>Direct vs Indirect Impact</h4>
 
-<h5>FSN Level</h5>
-<table id="diFsnTable">
-  <thead>
-    <tr>
-      <th>Advertised FSN ID</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Assist %</th>
-      <th>Total Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-<h4>Day-of-Week Impact</h4>
-<table id="dowTable">
-  <thead>
-    <tr>
-      <th>Day</th>
-      <th>Orders</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Total Units</th>
-      <th>Assist %</th>
-      <th>Total Revenue (₹)</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <h5>Campaign Level</h5>
+  <table id="diCampaignTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Assist %</th>
+        <th>Direct Revenue (₹)</th>
+        <th>Indirect Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<h4>Cannibalization Risk Flags</h4>
-<table id="cannibalTable">
-  <thead>
-    <tr>
-      <th>Campaign ID</th>
-      <th>Assist %</th>
-      <th>Direct Units</th>
-      <th>Indirect Units</th>
-      <th>Total Revenue (₹)</th>
-      <th>Risk Flag</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <h5>FSN Level</h5>
+  <table id="diFsnTable">
+    <thead>
+      <tr>
+        <th>Advertised FSN ID</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Assist %</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Day-of-Week Impact</h4>
+  <table id="dowTable">
+    <thead>
+      <tr>
+        <th>Day</th>
+        <th>Orders</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Units</th>
+        <th>Assist %</th>
+        <th>Total Revenue (₹)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h4>Cannibalization Risk Flags</h4>
+  <table id="cannibalTable">
+    <thead>
+      <tr>
+        <th>Campaign ID</th>
+        <th>Assist %</th>
+        <th>Direct Units</th>
+        <th>Indirect Units</th>
+        <th>Total Revenue (₹)</th>
+        <th>Risk Flag</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
 </section>
 
@@ -286,34 +288,33 @@
   <input type="file" id="keywordFile" accept=".csv">
   <button onclick="generateKeywordReport()">Generate Report</button>
 
-  <!-- Executive Summary -->
-<h4>Top Revenue Keywords</h4>
-<table id="kwTopRevenue">
-  <thead>
-    <tr>
-      <th>Keyword</th>
-      <th>Spend (₹)</th>
-      <th>Revenue (₹)</th>
-      <th>Units</th>
-      <th>ROI</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <h4>Top Revenue Keywords</h4>
+  <table id="kwTopRevenue">
+    <thead>
+      <tr>
+        <th>Keyword</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-<h4>Top Waste Keywords</h4>
-<table id="kwTopWaste">
-  <thead>
-    <tr>
-      <th>Keyword</th>
-      <th>Spend (₹)</th>
-      <th>Revenue (₹)</th>
-      <th>Units</th>
-      <th>ROI</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <h4>Top Waste Keywords</h4>
+  <table id="kwTopWaste">
+    <thead>
+      <tr>
+        <th>Keyword</th>
+        <th>Spend (₹)</th>
+        <th>Revenue (₹)</th>
+        <th>Units</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <h4>ROI-Based Keyword Segmentation</h4>
   <table id="kwSegment">
@@ -331,25 +332,25 @@
     <tbody></tbody>
   </table>
 
-<h4>Campaign-wise Keyword Performance</h4>
+  <h4>Campaign-wise Keyword Performance</h4>
 
-<div class="table-actions">
-  <button onclick="expandAllKeywords()">Expand All</button>
-  <button onclick="collapseAllKeywords()">Collapse All</button>
-</div>
+  <div class="table-actions">
+    <button onclick="expandAllKeywords()">Expand All</button>
+    <button onclick="collapseAllKeywords()">Collapse All</button>
+  </div>
 
-<table id="kwCampaign" class="report-table">
-  <thead>
-    <tr>
-      <th>Campaign / Keyword</th>
-      <th>Views</th>
-      <th>Clicks</th>
-      <th>Total Units Sold</th>
-      <th>ROI</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <table id="kwCampaign" class="report-table">
+    <thead>
+      <tr>
+        <th>Campaign / Keyword</th>
+        <th>Views</th>
+        <th>Clicks</th>
+        <th>Total Units Sold</th>
+        <th>ROI</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
   <h4>Keyword Trend — Day-wise</h4>
   <table id="kwDay">
@@ -380,7 +381,7 @@
   </table>
 </section>
 
-<!-- ================= ADDITION: ADVANCED DAILY REPORT (PHASE 1) ================= -->
+<!-- ================= ADDITION: ADVANCED DAILY REPORT ================= -->
 <section id="advancedDaily" class="tab-content">
 
   <h3>Advanced Daily Report</h3>
@@ -401,6 +402,8 @@
       <input type="file" id="adrFsnFile" accept=".csv,.xlsx">
     </div>
   </div>
+
+  <button id="adrGenerateBtn">Generate Advanced Report</button>
 
   <div class="validation-box">
     <h4>File Validation Status</h4>
@@ -441,7 +444,7 @@
 <script src="keyword.js"></script>
 <script src="campaign-order.js"></script>
 
-<!-- ===== ADDITION: Advanced Daily Report JS ===== -->
+<!-- ===== ADDITION ===== -->
 <script src="advanced-daily-report.js"></script>
 
 </body>
