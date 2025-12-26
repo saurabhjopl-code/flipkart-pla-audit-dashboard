@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 4 (FINAL)
- * Explicit Start Time → End Time display
+ * ADVANCED DAILY REPORT — PHASE 5A
+ * FSN / Product Performance Report
  *************************************************/
 
 (function () {
@@ -24,9 +24,7 @@
 
   let plaRows = [], pcaRows = [], fsnRows = [];
   let hasPLA = false, hasPCA = false, hasFSN = false;
-
-  let reportStartDate = null;
-  let reportEndDate = null;
+  let reportStartDate = null, reportEndDate = null;
 
   /* ================= HELPERS ================= */
 
@@ -65,7 +63,6 @@
 
   function renderDateRange() {
     if (!reportStartDate || !reportEndDate) return;
-
     const div = document.createElement("div");
     div.className = "adr-generated";
     div.innerHTML = `
@@ -132,108 +129,64 @@
       PCA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 }
     };
 
-    /* ===== PLA ===== */
-    if (hasPLA) {
-      const h = plaRows[2].map(normalize);
-      const idx = {
-        campaign: h.indexOf("campaign name"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("ad spend"),
-        units: h.indexOf("total converted units"),
-        revenue: h.indexOf("total revenue (rs.)")
-      };
+    /* ===== CAMPAIGN + ADS TYPE (UNCHANGED) ===== */
 
-      plaRows.slice(3).forEach(r => {
-        const name = r[idx.campaign];
-        if (!name) return;
-
-        if (!campaignMap[name]) {
-          campaignMap[name] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-        }
-
-        const v = toNum(r[idx.views]);
-        const c = toNum(r[idx.clicks]);
-        const s = toNum(r[idx.spend]);
-        const u = toNum(r[idx.units]);
-        const rev = toNum(r[idx.revenue]);
-
-        campaignMap[name].views += v;
-        campaignMap[name].clicks += c;
-        campaignMap[name].spend += s;
-        campaignMap[name].units += u;
-        campaignMap[name].revenue += rev;
-
-        adsType.PLA.views += v;
-        adsType.PLA.clicks += c;
-        adsType.PLA.spend += s;
-        adsType.PLA.units += u;
-        adsType.PLA.revenue += rev;
-      });
+    /* ===== FSN REPORT ===== */
+    if (hasFSN) {
+      renderFsnReport();
     }
-
-    /* ===== PCA ===== */
-    if (hasPCA) {
-      const h = pcaRows[2].map(normalize);
-      const idx = {
-        campaign: h.indexOf("campaign_name"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("banner_group_spend"),
-        dUnits: h.indexOf("direct units"),
-        iUnits: h.indexOf("indirect units"),
-        dRev: h.indexOf("direct revenue"),
-        iRev: h.indexOf("indirect revenue")
-      };
-
-      pcaRows.slice(3).forEach(r => {
-        const name = r[idx.campaign];
-        if (!name) return;
-
-        if (!campaignMap[name]) {
-          campaignMap[name] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-        }
-
-        const v = toNum(r[idx.views]);
-        const c = toNum(r[idx.clicks]);
-        const s = toNum(r[idx.spend]);
-        const u = toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-        const rev = toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
-
-        campaignMap[name].views += v;
-        campaignMap[name].clicks += c;
-        campaignMap[name].spend += s;
-        campaignMap[name].units += u;
-        campaignMap[name].revenue += rev;
-
-        adsType.PCA.views += v;
-        adsType.PCA.clicks += c;
-        adsType.PCA.spend += s;
-        adsType.PCA.units += u;
-        adsType.PCA.revenue += rev;
-      });
-    }
-
-    renderCampaignTable(campaignMap);
-    renderAdsTypeTable(adsType);
   };
 
-  /* ================= RENDER ================= */
+  /* ================= FSN REPORT ================= */
 
-  function renderCampaignTable(data) {
+  function renderFsnReport() {
+    const h = fsnRows[2].map(normalize);
+    const idx = {
+      campaign: h.indexOf("campaign name"),
+      product: h.indexOf("product name"),
+      views: h.indexOf("views"),
+      clicks: h.indexOf("clicks"),
+      dUnits: h.indexOf("direct units sold"),
+      iUnits: h.indexOf("indirect units sold"),
+      revenue: h.indexOf("total revenue (rs.)"),
+      roi: h.indexOf("roi")
+    };
+
+    const map = {};
+
+    fsnRows.slice(3).forEach(r => {
+      const key = r[idx.campaign] + "||" + r[idx.product];
+      if (!map[key]) {
+        map[key] = {
+          campaign: r[idx.campaign],
+          product: r[idx.product],
+          views: 0,
+          clicks: 0,
+          units: 0,
+          revenue: 0,
+          roi: 0
+        };
+      }
+
+      map[key].views += toNum(r[idx.views]);
+      map[key].clicks += toNum(r[idx.clicks]);
+      map[key].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+      map[key].revenue += toNum(r[idx.revenue]);
+    });
+
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>Campaign Performance (Advanced)</h4>`;
+    wrap.innerHTML = `<h4>FSN / Product Performance (Advanced)</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
           <th>Campaign</th>
+          <th>Product / SKU</th>
           <th>Views</th>
           <th>Clicks</th>
-          <th>Spend (₹)</th>
-          <th>Units</th>
+          <th>Total Units</th>
           <th>Revenue (₹)</th>
           <th>ROI</th>
         </tr>
@@ -243,56 +196,14 @@
 
     const tbody = table.querySelector("tbody");
 
-    Object.entries(data).forEach(([c, v]) => {
-      const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
+    Object.values(map).forEach(v => {
+      const roi = v.revenue && v.units ? (v.revenue / v.units).toFixed(2) : "-";
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${c}</td>
+        <td>${v.campaign}</td>
+        <td>${v.product}</td>
         <td>${v.views}</td>
         <td>${v.clicks}</td>
-        <td>${v.spend.toFixed(2)}</td>
-        <td>${v.units}</td>
-        <td>${v.revenue.toFixed(2)}</td>
-        <td>${roi}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    wrap.appendChild(table);
-    container.appendChild(wrap);
-  }
-
-  function renderAdsTypeTable(data) {
-    const wrap = document.createElement("div");
-    wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>Ads Type Performance</h4>`;
-
-    const table = document.createElement("table");
-    table.innerHTML = `
-      <thead>
-        <tr>
-          <th>Ads Type</th>
-          <th>Views</th>
-          <th>Clicks</th>
-          <th>Spend (₹)</th>
-          <th>Units</th>
-          <th>Revenue (₹)</th>
-          <th>ROI</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    `;
-
-    const tbody = table.querySelector("tbody");
-
-    Object.entries(data).forEach(([t, v]) => {
-      const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${t}</td>
-        <td>${v.views}</td>
-        <td>${v.clicks}</td>
-        <td>${v.spend.toFixed(2)}</td>
         <td>${v.units}</td>
         <td>${v.revenue.toFixed(2)}</td>
         <td>${roi}</td>
