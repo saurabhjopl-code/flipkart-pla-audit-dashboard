@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 2 (FINAL)
- * STRICT HEADER VALIDATION (LOCKED HEADERS)
+ * ADVANCED DAILY REPORT — PHASE 2 (FINAL, FIXED)
+ * STRICT HEADERS (LOCKED) + ROBUST VALIDATION
  *************************************************/
 
 (function () {
@@ -23,7 +23,7 @@
   let hasPLA = false, hasPCA = false, hasFSN = false;
   let plaRows = [], pcaRows = [], fsnRows = [];
 
-  /* ================= LOCKED HEADERS ================= */
+  /* ================= LOCKED HEADERS (NEVER CHANGE) ================= */
 
   const HEADERS = {
     PLA: [
@@ -87,12 +87,26 @@
     return rows;
   }
 
-  function validate(rows, type) {
-    const header = rows[2];
-    return HEADERS[type].every(h => header.includes(h));
+  /* ================= HEADER NORMALIZATION ================= */
+  function normalize(v) {
+    return v
+      .replace(/\ufeff/g, "")   // BOM
+      .trim()
+      .toLowerCase();
   }
 
+  function validate(rows, type) {
+    if (!rows[2]) return false;
+
+    const actual = rows[2].map(normalize);
+    const required = HEADERS[type].map(normalize);
+
+    return required.every(h => actual.includes(h));
+  }
+
+  /* ================= AVAILABILITY (PHASE 1 LOGIC) ================= */
   function refreshAvailability() {
+
     sPla.textContent = hasPLA ? "PLA: ✅ Uploaded" : "PLA: ❌ Not Uploaded";
     sPca.textContent = hasPCA ? "PCA: ✅ Uploaded" : "PCA: ❌ Not Uploaded";
     sFsn.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
@@ -118,6 +132,7 @@
 
   async function handleFile(input, type) {
     if (!input.files.length) return [];
+
     const file = input.files[0];
     const text = await file.text();
     const rows = parseCSV(text);
@@ -151,6 +166,7 @@
     refreshAvailability();
   };
 
+  /* ================= PHASE 3 READY ================= */
   window.__ADR_DATA = {
     get pla() { return plaRows; },
     get pca() { return pcaRows; },
