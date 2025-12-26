@@ -1,6 +1,6 @@
 /*************************************************
- * 🔒 ADVANCED DAILY REPORT — FINAL STABLE VERSION
- * ALL 7 REPORTS | ONE CLICK | NO REGRESSIONS
+ * 🔒 ADVANCED DAILY REPORT — FINAL STABLE v1.1
+ * ALL 7 REPORTS | DATE SORT FIXED | PERIOD REMOVED
  *************************************************/
 
 (function () {
@@ -19,7 +19,6 @@
   /* ========= STATE ========= */
   let plaRows = [], pcaRows = [], fsnRows = [];
   let hasPLA = false, hasPCA = false, hasFSN = false;
-  let startDate = "", endDate = "";
 
   /* ========= HELPERS ========= */
   const norm = v => v.replace(/\ufeff/g, "").trim().toLowerCase();
@@ -51,18 +50,6 @@
     sFsn.textContent = hasFSN ? "FSN: ✅ Uploaded" : "FSN: ❌ Not Uploaded";
   }
 
-  function extractDates(rows) {
-    startDate = rows?.[0]?.[0] || "";
-    endDate = rows?.[1]?.[0] || "";
-  }
-
-  function renderPeriod() {
-    const d = document.createElement("div");
-    d.className = "adr-generated";
-    d.innerHTML = `<strong>Report Period:</strong> ${startDate} → ${endDate}`;
-    container.appendChild(d);
-  }
-
   function weekRange(dateStr) {
     const d = new Date(dateStr);
     const day = d.getDay() || 7;
@@ -70,7 +57,6 @@
     mon.setDate(d.getDate() - day + 1);
     const sun = new Date(mon);
     sun.setDate(mon.getDate() + 6);
-
     const f = x => x.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
     return `${f(mon)} – ${f(sun)}`;
   }
@@ -95,14 +81,12 @@
   plaInput.onchange = async () => {
     plaRows = parseCSV(await plaInput.files[0].text());
     hasPLA = plaRows.length > 3;
-    extractDates(plaRows);
     refreshStatus();
   };
 
   pcaInput.onchange = async () => {
     pcaRows = parseCSV(await pcaInput.files[0].text());
     hasPCA = pcaRows.length > 3;
-    extractDates(pcaRows);
     refreshStatus();
   };
 
@@ -120,7 +104,6 @@
     }
 
     clearOutput();
-    renderPeriod();
 
     renderCampaignReport();
     if (hasFSN) renderCategoryReport();
@@ -134,7 +117,6 @@
   /* ========= 1. CAMPAIGN REPORT ========= */
   function renderCampaignReport() {
     const map = {};
-
     const add = (k,v,c,s,u,r)=>{
       map[k] ??= {v:0,c:0,s:0,u:0,r:0};
       map[k].v+=v; map[k].c+=c; map[k].s+=s; map[k].u+=u; map[k].r+=r;
@@ -160,9 +142,9 @@
 
     renderTable("Campaign Performance",
       ["Campaign","Views","Clicks","Units","Revenue (₹)","ROI"],
-      Object.entries(map).map(([k,v])=>[
-        k,v.v,v.c,v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)
-      ]).sort((a,b)=>b[5]-a[5])
+      Object.entries(map)
+        .map(([k,v])=>[k,v.v,v.c,v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)])
+        .sort((a,b)=>b[5]-a[5])
     );
   }
 
@@ -173,6 +155,7 @@
              du:h.indexOf("direct units sold"),iu:h.indexOf("indirect units sold"),
              r:h.indexOf("total revenue (rs.)"),roi:h.indexOf("roi")};
     const map={};
+
     fsnRows.slice(3).forEach(r=>{
       const k=r[i.c]; if(!k) return;
       map[k]??={v:0,c:0,u:0,r:0,s:0};
@@ -185,9 +168,9 @@
 
     renderTable("Category-wise Performance",
       ["Category","Views","Clicks","Units","Revenue (₹)","ROI"],
-      Object.entries(map).map(([k,v])=>[
-        k,v.v,v.c,v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)
-      ]).sort((a,b)=>b[5]-a[5])
+      Object.entries(map)
+        .map(([k,v])=>[k,v.v,v.c,v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)])
+        .sort((a,b)=>b[5]-a[5])
     );
   }
 
@@ -249,9 +232,11 @@
 
     renderTable(title,
       ["Date","Views","Clicks","Spend (₹)","Units","Revenue (₹)","ROI"],
-      Object.entries(map).map(([d,v])=>[
-        d,v.v,v.c,v.s.toFixed(2),v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)
-      ])
+      Object.entries(map)
+        .sort((a,b)=>new Date(a[0]) - new Date(b[0]))   // ✅ DATE ASC
+        .map(([d,v])=>[
+          d,v.v,v.c,v.s.toFixed(2),v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)
+        ])
     );
   }
 
@@ -315,9 +300,8 @@
 
     renderTable("Weekly Performance",
       ["Week","Views","Clicks","Spend (₹)","Units","Revenue (₹)","ROI"],
-      Object.entries(map).map(([w,v])=>[
-        w,v.v,v.c,v.s.toFixed(2),v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)
-      ])
+      Object.entries(map)
+        .map(([w,v])=>[w,v.v,v.c,v.s.toFixed(2),v.u,v.r.toFixed(2),(v.s?v.r/v.s:0).toFixed(2)])
     );
   }
 
