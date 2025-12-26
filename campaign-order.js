@@ -225,6 +225,34 @@ function generateCampaignOrderReport() {
             <td>${v.r.toFixed(0)}</td>
           </tr>`;
       });
+    /* ===== FSN TOP 20 TOGGLE BUTTONS ===== */
+
+if (!document.getElementById("fsnToggleControls")) {
+  const controls = document.createElement("div");
+  controls.id = "fsnToggleControls";
+  controls.style.margin = "10px 0";
+
+  controls.innerHTML = `
+    <button id="showTop20Fsn">Show Top 20 FSN</button>
+    <button id="showAllFsn">Show All FSN</button>
+  `;
+
+  const diFsnTable = document.getElementById("diFsnTable");
+  diFsnTable.parentNode.insertBefore(controls, diFsnTable);
+}
+
+document.getElementById("showAllFsn").onclick = () => {
+  document
+    .querySelectorAll("#diFsnTable .fsn-extra")
+    .forEach(r => r.classList.remove("hidden"));
+};
+
+document.getElementById("showTop20Fsn").onclick = () => {
+  document
+    .querySelectorAll("#diFsnTable .fsn-extra")
+    .forEach(r => r.classList.add("hidden"));
+};
+
 
     /* ================= DAY OF WEEK ================= */
 
