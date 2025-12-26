@@ -1,8 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 4 (DATE-AWARE)
- * Row 0 = Start Date
- * Row 1 = End Date
- * Row 2 = Header
+ * ADVANCED DAILY REPORT — PHASE 4 (FINAL)
+ * Explicit Start Time → End Time display
  *************************************************/
 
 (function () {
@@ -61,8 +59,8 @@
   }
 
   function extractDateRange(rows) {
-    reportStartDate = rows[0]?.[0] || null;
-    reportEndDate = rows[1]?.[0] || null;
+    reportStartDate = rows?.[0]?.[0] || null;
+    reportEndDate = rows?.[1]?.[0] || null;
   }
 
   function renderDateRange() {
@@ -70,7 +68,12 @@
 
     const div = document.createElement("div");
     div.className = "adr-generated";
-    div.innerHTML = `<strong>Report Period:</strong> ${reportStartDate} → ${reportEndDate}`;
+    div.innerHTML = `
+      <strong>Report Period:</strong>
+      Start Time: <b>${reportStartDate}</b>
+      &nbsp;→&nbsp;
+      End Time: <b>${reportEndDate}</b>
+    `;
     container.appendChild(div);
   }
 
@@ -125,18 +128,20 @@
 
     const campaignMap = {};
     const adsType = {
-      PLA: { spend: 0, units: 0, revenue: 0 },
-      PCA: { spend: 0, units: 0, revenue: 0 }
+      PLA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 },
+      PCA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 }
     };
 
-    /* ===== PLA DATA (rows 3+) ===== */
+    /* ===== PLA ===== */
     if (hasPLA) {
-      const header = plaRows[2].map(normalize);
+      const h = plaRows[2].map(normalize);
       const idx = {
-        campaign: header.indexOf("campaign name"),
-        spend: header.indexOf("ad spend"),
-        units: header.indexOf("total converted units"),
-        revenue: header.indexOf("total revenue (rs.)")
+        campaign: h.indexOf("campaign name"),
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("ad spend"),
+        units: h.indexOf("total converted units"),
+        revenue: h.indexOf("total revenue (rs.)")
       };
 
       plaRows.slice(3).forEach(r => {
@@ -144,33 +149,41 @@
         if (!name) return;
 
         if (!campaignMap[name]) {
-          campaignMap[name] = { spend: 0, units: 0, revenue: 0 };
+          campaignMap[name] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
         }
 
+        const v = toNum(r[idx.views]);
+        const c = toNum(r[idx.clicks]);
         const s = toNum(r[idx.spend]);
         const u = toNum(r[idx.units]);
         const rev = toNum(r[idx.revenue]);
 
+        campaignMap[name].views += v;
+        campaignMap[name].clicks += c;
         campaignMap[name].spend += s;
         campaignMap[name].units += u;
         campaignMap[name].revenue += rev;
 
+        adsType.PLA.views += v;
+        adsType.PLA.clicks += c;
         adsType.PLA.spend += s;
         adsType.PLA.units += u;
         adsType.PLA.revenue += rev;
       });
     }
 
-    /* ===== PCA DATA (rows 3+) ===== */
+    /* ===== PCA ===== */
     if (hasPCA) {
-      const header = pcaRows[2].map(normalize);
+      const h = pcaRows[2].map(normalize);
       const idx = {
-        campaign: header.indexOf("campaign_name"),
-        spend: header.indexOf("banner_group_spend"),
-        dUnits: header.indexOf("direct units"),
-        iUnits: header.indexOf("indirect units"),
-        dRev: header.indexOf("direct revenue"),
-        iRev: header.indexOf("indirect revenue")
+        campaign: h.indexOf("campaign_name"),
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("banner_group_spend"),
+        dUnits: h.indexOf("direct units"),
+        iUnits: h.indexOf("indirect units"),
+        dRev: h.indexOf("direct revenue"),
+        iRev: h.indexOf("indirect revenue")
       };
 
       pcaRows.slice(3).forEach(r => {
@@ -178,17 +191,23 @@
         if (!name) return;
 
         if (!campaignMap[name]) {
-          campaignMap[name] = { spend: 0, units: 0, revenue: 0 };
+          campaignMap[name] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
         }
 
+        const v = toNum(r[idx.views]);
+        const c = toNum(r[idx.clicks]);
         const s = toNum(r[idx.spend]);
         const u = toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
         const rev = toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
 
+        campaignMap[name].views += v;
+        campaignMap[name].clicks += c;
         campaignMap[name].spend += s;
         campaignMap[name].units += u;
         campaignMap[name].revenue += rev;
 
+        adsType.PCA.views += v;
+        adsType.PCA.clicks += c;
         adsType.PCA.spend += s;
         adsType.PCA.units += u;
         adsType.PCA.revenue += rev;
@@ -211,6 +230,8 @@
       <thead>
         <tr>
           <th>Campaign</th>
+          <th>Views</th>
+          <th>Clicks</th>
           <th>Spend (₹)</th>
           <th>Units</th>
           <th>Revenue (₹)</th>
@@ -227,6 +248,8 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${c}</td>
+        <td>${v.views}</td>
+        <td>${v.clicks}</td>
         <td>${v.spend.toFixed(2)}</td>
         <td>${v.units}</td>
         <td>${v.revenue.toFixed(2)}</td>
@@ -249,6 +272,8 @@
       <thead>
         <tr>
           <th>Ads Type</th>
+          <th>Views</th>
+          <th>Clicks</th>
           <th>Spend (₹)</th>
           <th>Units</th>
           <th>Revenue (₹)</th>
@@ -265,6 +290,8 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${t}</td>
+        <td>${v.views}</td>
+        <td>${v.clicks}</td>
         <td>${v.spend.toFixed(2)}</td>
         <td>${v.units}</td>
         <td>${v.revenue.toFixed(2)}</td>
