@@ -1,3 +1,5 @@
+throw new Error("CAMPAIGN ORDER JS EXECUTED");
+
 /*************************************************
  * CAMPAIGN ORDER REPORT – FINAL (STABLE + FIXES)
  *************************************************/
