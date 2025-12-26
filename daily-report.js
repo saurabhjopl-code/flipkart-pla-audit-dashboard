@@ -62,10 +62,16 @@ function buildCampaignTable(pla, pca) {
     const h = src.h;
     const idx = {
       c: h.indexOf("Campaign Name"),
-      s: h.indexOf("Spend (Rs.)"),
-      r: h.indexOf("Total Revenue (Rs.)"),
-      du: h.indexOf("Direct Units Sold"),
-      iu: h.indexOf("Indirect Units Sold")
+    s: h.indexOf("Spend (₹)") !== -1
+       ? h.indexOf("Spend (₹)")
+       : h.indexOf("Spend (Rs.)"),
+
+  r: h.indexOf("Total Revenue (₹)") !== -1
+       ? h.indexOf("Total Revenue (₹)")
+       : h.indexOf("Total Revenue (Rs.)"),
+
+  du: h.indexOf("Direct Units Sold"),
+  iu: h.indexOf("Indirect Units Sold")
     };
 
     src.d.forEach(row => {
@@ -102,10 +108,16 @@ function buildDailyTrend(pla, pca) {
     const h = src.h;
     const idx = {
       d: h.indexOf("Date"),
-      s: h.indexOf("Spend (Rs.)"),
-      r: h.indexOf("Total Revenue (Rs.)"),
-      du: h.indexOf("Direct Units Sold"),
-      iu: h.indexOf("Indirect Units Sold")
+      s: h.indexOf("Spend (₹)") !== -1
+       ? h.indexOf("Spend (₹)")
+       : h.indexOf("Spend (Rs.)"),
+
+  r: h.indexOf("Total Revenue (₹)") !== -1
+       ? h.indexOf("Total Revenue (₹)")
+       : h.indexOf("Total Revenue (Rs.)"),
+
+  du: h.indexOf("Direct Units Sold"),
+  iu: h.indexOf("Indirect Units Sold")
     };
 
     src.d.forEach(row => {
@@ -140,10 +152,16 @@ function buildWeeklyTrend(pla, pca) {
     const h = src.h;
     const idx = {
       d: h.indexOf("Date"),
-      s: h.indexOf("Spend (Rs.)"),
-      r: h.indexOf("Total Revenue (Rs.)"),
-      du: h.indexOf("Direct Units Sold"),
-      iu: h.indexOf("Indirect Units Sold")
+      s: h.indexOf("Spend (₹)") !== -1
+       ? h.indexOf("Spend (₹)")
+       : h.indexOf("Spend (Rs.)"),
+
+  r: h.indexOf("Total Revenue (₹)") !== -1
+       ? h.indexOf("Total Revenue (₹)")
+       : h.indexOf("Total Revenue (Rs.)"),
+
+  du: h.indexOf("Direct Units Sold"),
+  iu: h.indexOf("Indirect Units Sold")
     };
 
     src.d.forEach(row => {
