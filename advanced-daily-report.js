@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 5A
- * FSN / Product Performance Report
+ * ADVANCED DAILY REPORT — PHASE 5B
+ * Daily & ISO Weekly Trend Reports
  *************************************************/
 
 (function () {
@@ -89,6 +89,15 @@
     }
   }
 
+  function isoWeek(dateStr) {
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    const weekNo = 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+    return `${d.getFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+  }
+
   /* ================= FILE LOAD ================= */
 
   plaInput.onchange = async () => {
@@ -123,70 +132,89 @@
     clearOldTables();
     renderDateRange();
 
-    const campaignMap = {};
-    const adsType = {
-      PLA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 },
-      PCA: { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 }
-    };
+    const daily = {};
+    const weekly = {};
 
-    /* ===== CAMPAIGN + ADS TYPE (UNCHANGED) ===== */
+    /* ===== PLA ===== */
+    if (hasPLA) {
+      const h = plaRows[2].map(normalize);
+      const idx = {
+        date: h.indexOf("date"),
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("ad spend"),
+        units: h.indexOf("total converted units"),
+        revenue: h.indexOf("total revenue (rs.)")
+      };
 
-    /* ===== FSN REPORT ===== */
-    if (hasFSN) {
-      renderFsnReport();
+      plaRows.slice(3).forEach(r => {
+        const d = r[idx.date];
+        if (!d) return;
+        const w = isoWeek(d);
+
+        [daily, weekly].forEach((obj, i) => {
+          const key = i === 0 ? d : w;
+          if (!obj[key]) obj[key] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
+          obj[key].views += toNum(r[idx.views]);
+          obj[key].clicks += toNum(r[idx.clicks]);
+          obj[key].spend += toNum(r[idx.spend]);
+          obj[key].units += toNum(r[idx.units]);
+          obj[key].revenue += toNum(r[idx.revenue]);
+        });
+      });
     }
+
+    /* ===== PCA ===== */
+    if (hasPCA) {
+      const h = pcaRows[2].map(normalize);
+      const idx = {
+        date: h.indexOf("date"),
+        views: h.indexOf("views"),
+        clicks: h.indexOf("clicks"),
+        spend: h.indexOf("banner_group_spend"),
+        dUnits: h.indexOf("direct units"),
+        iUnits: h.indexOf("indirect units"),
+        dRev: h.indexOf("direct revenue"),
+        iRev: h.indexOf("indirect revenue")
+      };
+
+      pcaRows.slice(3).forEach(r => {
+        const d = r[idx.date];
+        if (!d) return;
+        const w = isoWeek(d);
+
+        [daily, weekly].forEach((obj, i) => {
+          const key = i === 0 ? d : w;
+          if (!obj[key]) obj[key] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
+          obj[key].views += toNum(r[idx.views]);
+          obj[key].clicks += toNum(r[idx.clicks]);
+          obj[key].spend += toNum(r[idx.spend]);
+          obj[key].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+          obj[key].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
+        });
+      });
+    }
+
+    renderTrendTable("Daily Trend", daily);
+    renderTrendTable("ISO Weekly Trend", weekly);
   };
 
-  /* ================= FSN REPORT ================= */
+  /* ================= RENDER ================= */
 
-  function renderFsnReport() {
-    const h = fsnRows[2].map(normalize);
-    const idx = {
-      campaign: h.indexOf("campaign name"),
-      product: h.indexOf("product name"),
-      views: h.indexOf("views"),
-      clicks: h.indexOf("clicks"),
-      dUnits: h.indexOf("direct units sold"),
-      iUnits: h.indexOf("indirect units sold"),
-      revenue: h.indexOf("total revenue (rs.)"),
-      roi: h.indexOf("roi")
-    };
-
-    const map = {};
-
-    fsnRows.slice(3).forEach(r => {
-      const key = r[idx.campaign] + "||" + r[idx.product];
-      if (!map[key]) {
-        map[key] = {
-          campaign: r[idx.campaign],
-          product: r[idx.product],
-          views: 0,
-          clicks: 0,
-          units: 0,
-          revenue: 0,
-          roi: 0
-        };
-      }
-
-      map[key].views += toNum(r[idx.views]);
-      map[key].clicks += toNum(r[idx.clicks]);
-      map[key].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-      map[key].revenue += toNum(r[idx.revenue]);
-    });
-
+  function renderTrendTable(title, data) {
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>FSN / Product Performance (Advanced)</h4>`;
+    wrap.innerHTML = `<h4>${title}</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
-          <th>Campaign</th>
-          <th>Product / SKU</th>
+          <th>Period</th>
           <th>Views</th>
           <th>Clicks</th>
-          <th>Total Units</th>
+          <th>Spend (₹)</th>
+          <th>Units</th>
           <th>Revenue (₹)</th>
           <th>ROI</th>
         </tr>
@@ -196,20 +224,22 @@
 
     const tbody = table.querySelector("tbody");
 
-    Object.values(map).forEach(v => {
-      const roi = v.revenue && v.units ? (v.revenue / v.units).toFixed(2) : "-";
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${v.campaign}</td>
-        <td>${v.product}</td>
-        <td>${v.views}</td>
-        <td>${v.clicks}</td>
-        <td>${v.units}</td>
-        <td>${v.revenue.toFixed(2)}</td>
-        <td>${roi}</td>
-      `;
-      tbody.appendChild(tr);
-    });
+    Object.entries(data)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([k, v]) => {
+        const roi = v.spend ? (v.revenue / v.spend).toFixed(2) : "0.00";
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${k}</td>
+          <td>${v.views}</td>
+          <td>${v.clicks}</td>
+          <td>${v.spend.toFixed(2)}</td>
+          <td>${v.units}</td>
+          <td>${v.revenue.toFixed(2)}</td>
+          <td>${roi}</td>
+        `;
+        tbody.appendChild(tr);
+      });
 
     wrap.appendChild(table);
     container.appendChild(wrap);
