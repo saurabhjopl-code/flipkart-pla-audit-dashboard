@@ -1,6 +1,6 @@
 /*************************************************
- * ADVANCED DAILY REPORT — PHASE 6A
- * Campaign Audit Intelligence (ROI based)
+ * ADVANCED DAILY REPORT — PHASE 6B
+ * Category-wise Report (AdGroup Name from FSN)
  *************************************************/
 
 (function () {
@@ -64,8 +64,8 @@
   }
 
   function auditRemark(roi) {
-    if (roi >= 4) return "🟢 Scale";
-    if (roi >= 2) return "🟠 Optimize";
+    if (roi >= 5) return "🟢 Scale";
+    if (roi >= 3) return "🟠 Optimize";
     return "🔴 Loss";
   }
 
@@ -85,97 +85,85 @@
 
   fsnInput.onchange = async () => {
     fsnRows = parseCSV(await fsnInput.files[0].text());
+    extractDateRange(fsnRows);
     hasFSN = fsnRows.length > 3;
   };
 
   /* ================= GENERATE ================= */
 
   generateBtn.onclick = () => {
-    if (!(hasPLA || hasPCA)) {
-      alert("Upload PLA or PCA to generate report");
+    if (!hasFSN) {
+      alert("Upload Consolidated FSN Report to generate Category-wise report");
       return;
     }
 
     clearOldTables();
     renderDateRange();
 
-    const campaignMap = {};
-
-    /* ===== PLA ===== */
-    if (hasPLA) {
-      const h = plaRows[2].map(normalize);
-      const idx = {
-        campaign: h.indexOf("campaign name"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("ad spend"),
-        units: h.indexOf("total converted units"),
-        revenue: h.indexOf("total revenue (rs.)")
-      };
-
-      plaRows.slice(3).forEach(r => {
-        const c = r[idx.campaign];
-        if (!c) return;
-        if (!campaignMap[c]) {
-          campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-        }
-        campaignMap[c].views += toNum(r[idx.views]);
-        campaignMap[c].clicks += toNum(r[idx.clicks]);
-        campaignMap[c].spend += toNum(r[idx.spend]);
-        campaignMap[c].units += toNum(r[idx.units]);
-        campaignMap[c].revenue += toNum(r[idx.revenue]);
-      });
-    }
-
-    /* ===== PCA ===== */
-    if (hasPCA) {
-      const h = pcaRows[2].map(normalize);
-      const idx = {
-        campaign: h.indexOf("campaign_name"),
-        views: h.indexOf("views"),
-        clicks: h.indexOf("clicks"),
-        spend: h.indexOf("banner_group_spend"),
-        dUnits: h.indexOf("direct units"),
-        iUnits: h.indexOf("indirect units"),
-        dRev: h.indexOf("direct revenue"),
-        iRev: h.indexOf("indirect revenue")
-      };
-
-      pcaRows.slice(3).forEach(r => {
-        const c = r[idx.campaign];
-        if (!c) return;
-        if (!campaignMap[c]) {
-          campaignMap[c] = { views: 0, clicks: 0, spend: 0, units: 0, revenue: 0 };
-        }
-        campaignMap[c].views += toNum(r[idx.views]);
-        campaignMap[c].clicks += toNum(r[idx.clicks]);
-        campaignMap[c].spend += toNum(r[idx.spend]);
-        campaignMap[c].units += toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
-        campaignMap[c].revenue += toNum(r[idx.dRev]) + toNum(r[idx.iRev]);
-      });
-    }
-
-    renderCampaignAudit(campaignMap);
+    renderCategoryReport();
   };
 
-  /* ================= RENDER ================= */
+  /* ================= CATEGORY REPORT ================= */
 
-  function renderCampaignAudit(data) {
+  function renderCategoryReport() {
+    const h = fsnRows[2].map(normalize);
+    const idx = {
+      category: h.indexOf("adgroup name"),
+      views: h.indexOf("views"),
+      clicks: h.indexOf("clicks"),
+      dUnits: h.indexOf("direct units sold"),
+      iUnits: h.indexOf("indirect units sold"),
+      revenue: h.indexOf("total revenue (rs.)"),
+      roi: h.indexOf("roi")
+    };
+
+    const map = {};
+
+    fsnRows.slice(3).forEach(r => {
+      const cat = r[idx.category];
+      if (!cat) return;
+
+      if (!map[cat]) {
+        map[cat] = {
+          category: cat,
+          views: 0,
+          clicks: 0,
+          units: 0,
+          revenue: 0,
+          spend: 0
+        };
+      }
+
+      const views = toNum(r[idx.views]);
+      const clicks = toNum(r[idx.clicks]);
+      const units = toNum(r[idx.dUnits]) + toNum(r[idx.iUnits]);
+      const revenue = toNum(r[idx.revenue]);
+      const roiVal = toNum(r[idx.roi]);
+
+      map[cat].views += views;
+      map[cat].clicks += clicks;
+      map[cat].units += units;
+      map[cat].revenue += revenue;
+
+      if (roiVal > 0) {
+        map[cat].spend += revenue / roiVal;
+      }
+    });
+
     const wrap = document.createElement("div");
     wrap.className = "adr-generated";
-    wrap.innerHTML = `<h4>Campaign Performance & Audit</h4>`;
+    wrap.innerHTML = `<h4>Category Performance (AdGroup Name)</h4>`;
 
     const table = document.createElement("table");
     table.innerHTML = `
       <thead>
         <tr>
-          <th>Campaign</th>
+          <th>Category</th>
           <th>Views</th>
           <th>Clicks</th>
           <th>Total Units</th>
           <th>Revenue (₹)</th>
           <th>ROI</th>
-          <th>Audit Remarks</th>
         </tr>
       </thead>
       <tbody></tbody>
@@ -183,22 +171,21 @@
 
     const tbody = table.querySelector("tbody");
 
-    Object.entries(data)
-      .map(([k, v]) => {
-        const roi = v.spend ? v.revenue / v.spend : 0;
-        return { campaign: k, ...v, roi };
-      })
-      .sort((a, b) => b.roi - a.roi) // ROI High → Low
+    Object.values(map)
+      .map(v => ({
+        ...v,
+        roi: v.spend ? v.revenue / v.spend : 0
+      }))
+      .sort((a, b) => a.category.localeCompare(b.category)) // A → Z
       .forEach(v => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${v.campaign}</td>
+          <td>${v.category}</td>
           <td>${v.views}</td>
           <td>${v.clicks}</td>
           <td>${v.units}</td>
           <td>${v.revenue.toFixed(2)}</td>
           <td>${v.roi.toFixed(2)}</td>
-          <td>${auditRemark(v.roi)}</td>
         `;
         tbody.appendChild(tr);
       });
