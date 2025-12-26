@@ -135,47 +135,37 @@
 
 </section>
 
-
-  
 <!-- ================= DAILY REPORT ================= -->
 <section id="campaign" class="tab-content active">
   <h3>Daily Report</h3>
-  <div id="reportPeriod" class="report-period"></div>
 
   <div class="daily-upload-section">
 
-  <!-- PLA -->
-  <div class="upload-block">
-    <label><b>PLA Report</b></label>
-    <input type="file" id="plaFile" accept=".csv">
-    <div class="hint">Mandatory for PLA data</div>
-    <div class="file-status" id="plaStatus"></div>
+    <div class="upload-block">
+      <label><b>PLA Report</b></label>
+      <input type="file" id="plaFile" accept=".csv">
+      <div class="hint">Mandatory for PLA data</div>
+      <div class="file-status" id="plaStatus"></div>
+    </div>
+
+    <div class="upload-block">
+      <label><b>PCA Report</b></label>
+      <input type="file" id="pcaFile" accept=".csv">
+      <div class="hint">Optional – partial calculation supported</div>
+      <div class="file-status" id="pcaStatus"></div>
+    </div>
+
+    <div class="upload-block">
+      <label><b>Consolidated FSN Report</b></label>
+      <input type="file" id="fsnFile" accept=".csv">
+      <div class="hint">Required only for Category-wise report</div>
+      <div class="file-status" id="fsnStatus"></div>
+    </div>
+
+    <button id="generateDailyReport" disabled>
+      Generate Report
+    </button>
   </div>
-
-  <!-- PCA -->
-  <div class="upload-block">
-    <label><b>PCA Report</b></label>
-    <input type="file" id="pcaFile" accept=".csv">
-    <div class="hint">Optional – partial calculation supported</div>
-    <div class="file-status" id="pcaStatus"></div>
-  </div>
-
-  <!-- FSN -->
-  <div class="upload-block">
-    <label><b>Consolidated FSN Report</b></label>
-    <input type="file" id="fsnFile" accept=".csv">
-    <div class="hint">Required only for Category-wise report</div>
-    <div class="file-status" id="fsnStatus"></div>
-  </div>
-
-  <button id="generateDailyReport" disabled>
-    Generate Report
-  </button>
-
-</div>
-
-
-  <div id="campaignKpi" class="kpis"></div>
 
   <table id="campaignTable">
     <thead>
@@ -191,7 +181,9 @@
     <tbody></tbody>
   </table>
 
-  <h4 class="collapsible" onclick="toggleSection('dailySection')">Day-to-Day Performance</h4>
+  <h4 class="collapsible" onclick="toggleSection('dailySection')">
+    Day-to-Day Performance
+  </h4>
   <div id="dailySection">
     <table id="dailyTrendTable">
       <thead>
@@ -207,7 +199,9 @@
     </table>
   </div>
 
-  <h4 class="collapsible" onclick="toggleSection('weeklySection')">Weekly Performance</h4>
+  <h4 class="collapsible" onclick="toggleSection('weeklySection')">
+    Weekly Performance
+  </h4>
   <div id="weeklySection">
     <table id="weeklyTrendTable">
       <thead>
@@ -223,6 +217,7 @@
     </table>
   </div>
 </section>
+  
 
 <!-- ================= PLACEMENT ================= -->
 <section id="placement" class="tab-content">
@@ -419,6 +414,7 @@
 <script src="campaign-order.js"></script>  
 </body>
 </html>
+
 
 
 
